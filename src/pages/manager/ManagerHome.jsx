@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format } from 'date-fns';
 import { FaUsers, FaRegClock, FaCheckCircle, FaDollarSign } from 'react-icons/fa';
-import { MdPendingActions } from 'react-icons/md';
 import GPSMap from '../../components/GPSMap';
 
 const mockEmployees = [
@@ -12,7 +10,6 @@ const mockEmployees = [
   { id: 4, name: 'Sarah Williams', clockedIn: true, onTime: true },
 ];
 
-// Animation variants
 const container = {
   hidden: { opacity: 0 },
   show: {
@@ -37,10 +34,9 @@ const cardHover = {
   }
 };
 
-const AdminHome = () => {
+const ManagerHome = () => {
   const [totalEmployees, setTotalEmployees] = useState(0);
   const [attendanceToday, setAttendanceToday] = useState(0);
-  const [pendingPayroll, setPendingPayroll] = useState(0);
   const [mapCenter, setMapCenter] = useState({ lat: 33.6844, lng: 73.0479 });
   const [zoneRadius] = useState(5);
 
@@ -48,7 +44,6 @@ const AdminHome = () => {
     setTotalEmployees(mockEmployees.length);
     const clockedInCount = mockEmployees.filter(emp => emp.clockedIn).length;
     setAttendanceToday(((clockedInCount / mockEmployees.length) * 100).toFixed(2));
-    setPendingPayroll(12);
   }, []);
 
   return (
@@ -63,7 +58,7 @@ const AdminHome = () => {
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+        className="grid grid-cols-1 sm:grid-cols-2 gap-6"
       >
         {/* Total Employees Card */}
         <motion.div 
@@ -114,32 +109,6 @@ const AdminHome = () => {
               {attendanceToday}%
             </motion.p>
             <p className="text-sm text-white mt-1">{mockEmployees.filter(emp => emp.clockedIn).length}/80 employees checked in</p>
-          </div>
-        </motion.div>
-
-        {/* Pending Payroll Card */}
-        <motion.div 
-          variants={item}
-          whileHover={cardHover}
-          className="bg-gradient-to-r from-orange-400 to-red-500 p-6 rounded-lg shadow-lg flex items-center space-x-4"
-        >
-          <motion.div
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ repeat: Infinity, duration: 3 }}
-          >
-            <MdPendingActions className="text-white text-3xl" />
-          </motion.div>
-          <div>
-            <h3 className="text-lg font-semibold text-white">Pending Payroll</h3>
-            <motion.p 
-              key={pendingPayroll}
-              initial={{ scale: 1.2 }}
-              animate={{ scale: 1 }}
-              className="text-3xl font-bold text-white mt-2"
-            >
-              {pendingPayroll}
-            </motion.p>
-            <p className="text-sm text-white mt-1">Requires approval</p>
           </div>
         </motion.div>
       </motion.div>
@@ -202,14 +171,14 @@ const AdminHome = () => {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
+        transition={{ delay: 0.4 }}
         className="bg-white rounded-lg shadow-lg p-6"
       >
         <h3 className="text-xl font-semibold mb-4 text-gray-800">Live GPS Map</h3>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
+          transition={{ delay: 0.5 }}
         >
           <GPSMap setLivePosition={setMapCenter} zoneRadius={zoneRadius} mapCenter={mapCenter} />
         </motion.div>
@@ -218,4 +187,4 @@ const AdminHome = () => {
   );
 };
 
-export default AdminHome;
+export default ManagerHome;

@@ -6,6 +6,16 @@ import VerifyOTP from "./pages/auth/VerifyOTP";
 import ResetPassword from "./pages/auth/ResetPassword";
 import DashbaordLayout from "./layouts/DashboardLayout";
 import AdminHome from "./pages/admin/AdminHome";
+import EmployeeManagement from "./pages/admin/EmployeeManagement";
+import AddEmployee from "./pages/admin/AddEmployee";
+import UpdateEmployee from "./pages/admin/UpdateEmployee";
+import AttendanceManagement from "./pages/admin/AttendanceManagement";
+import Settings from "./pages/admin/Settings";
+import PayrollManagement from "./pages/admin/PayrollManagement";
+import GenerateReport from "./pages/admin/GenerateReport";
+import ManagerHome from "./pages/manager/ManagerHome";
+import PayrollReports from "./pages/manager/PayrollReports";
+import Profile from "./pages/manager/Profile";
 
 const Loader = lazy(() => import("./components/Loader"));
 const AuthLayout = lazy(() => import("./layouts/AuthLayout"));
@@ -28,10 +38,29 @@ const appRouter = createBrowserRouter([
   },
   {
     path: "/admin",
-    element: <DashbaordLayout />,
+    element: <DashbaordLayout userRole={"admin"} />,
     errorElement: <Error />,
     children: [
       { path: "", element: <AdminHome /> },
+      { path: "employees-management", element: <EmployeeManagement /> },
+      { path: "add-employee", element: <AddEmployee /> },
+      { path: "update-employee/:id", element: <UpdateEmployee /> },
+      { path: "attendance-management", element: <AttendanceManagement /> },
+      { path: "payroll-management", element: <PayrollManagement /> },
+      // { path: "reports", element: <GenerateReport /> },
+      { path: "settings", element: <Settings /> },
+
+    ],
+  },
+  {
+    path: "/manager",
+    element: <DashbaordLayout userRole={"manager"} />,
+    errorElement: <Error />,
+    children: [
+      { path: "", element: <ManagerHome /> },
+      { path: "attendance-management", element: <AttendanceManagement /> },
+      { path: "payroll-reports", element: <PayrollReports /> },
+      { path: "settings", element: <Profile /> },
     ],
   },
 ]);
