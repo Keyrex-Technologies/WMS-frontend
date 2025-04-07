@@ -30,10 +30,10 @@ const appRouter = createBrowserRouter([
     errorElement: <Error />,
     children: [
       { path: "", element: <Login /> },
-      { path: "/sign-up", element: <SignUp /> },
-      { path: "/verify-otp", element: <VerifyOTP /> },
-      { path: "/forgot-password", element: <ForgotPassword /> },
-      { path: "/reset-password", element: <ResetPassword /> },
+      { path: "sign-up", element: <SignUp /> },
+      { path: "verify-otp", element: <VerifyOTP /> },
+      { path: "forgot-password", element: <ForgotPassword /> },
+      { path: "reset-password", element: <ResetPassword /> },
     ],
   },
   {
@@ -63,6 +63,10 @@ const appRouter = createBrowserRouter([
       { path: "settings", element: <Profile /> },
     ],
   },
+  {
+    path: "*",
+    element: <Error />
+  }  
 ]);
 
 const App = () => {
