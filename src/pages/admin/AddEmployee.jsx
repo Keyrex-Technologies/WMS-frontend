@@ -10,7 +10,9 @@ const AddEmployee = () => {
         email: '',
         cnic: '',
         phone: '',
-        salary: '',
+        wagePerHour: '',
+        dailyWorkingHours: '',
+        weeklyWorkingDays: '',
         role: 'Employee',
         joiningDate: '',
         address: ''
@@ -47,8 +49,18 @@ const AddEmployee = () => {
         } else if (!/^\d{11,15}$/.test(formData.phone)) {
             newErrors.phone = 'Phone must be 11-15 digits';
         }
-        if (!formData.salary) newErrors.salary = 'Salary is required';
+        if (!formData.wagePerHour) newErrors.wagePerHour = 'Wage per hour is required';
+        if (!formData.dailyWorkingHours) newErrors.dailyWorkingHours = 'Daily working hours is required';
+        if (!formData.weeklyWorkingDays) newErrors.weeklyWorkingDays = 'Weekly working days is required';
         if (!formData.joiningDate) newErrors.joiningDate = 'Joining date is required';
+
+        // Validate working hours constraints
+        if (formData.dailyWorkingHours && (formData.dailyWorkingHours < 1 || formData.dailyWorkingHours > 24)) {
+            newErrors.dailyWorkingHours = 'Must be between 1-24 hours';
+        }
+        if (formData.weeklyWorkingDays && (formData.weeklyWorkingDays < 1 || formData.weeklyWorkingDays > 7)) {
+            newErrors.weeklyWorkingDays = 'Must be between 1-7 days';
+        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -60,11 +72,24 @@ const AddEmployee = () => {
         if (validateForm()) {
             setIsSubmitting(true);
 
+            // Calculate monthly salary based on the new fields
+            const monthlySalary = calculateMonthlySalary(
+                formData.wagePerHour,
+                formData.dailyWorkingHours,
+                formData.weeklyWorkingDays
+            );
+
+            const employeeData = {
+                ...formData,
+                monthlySalary // Adding calculated monthly salary to the form data
+            };
+
             // Simulate API call
             setTimeout(() => {
-                console.log('Employee added:', formData);
+                console.log('Employee added:', employeeData);
                 setIsSubmitting(false);
                 setSuccessMessage('Employee added successfully!');
+                
                 // Reset form after 2 seconds
                 setTimeout(() => {
                     setFormData({
@@ -72,7 +97,9 @@ const AddEmployee = () => {
                         email: '',
                         cnic: '',
                         phone: '',
-                        salary: '',
+                        wagePerHour: '',
+                        dailyWorkingHours: '',
+                        weeklyWorkingDays: '',
                         role: 'Employee',
                         joiningDate: '',
                         address: ''
@@ -82,6 +109,13 @@ const AddEmployee = () => {
                 }, 2000);
             }, 1500);
         }
+    };
+
+    // Helper function to calculate monthly salary
+    const calculateMonthlySalary = (wagePerHour, dailyHours, weeklyDays) => {
+        const weeklyHours = dailyHours * weeklyDays;
+        const monthlyHours = weeklyHours * 4; // Approximate 4 weeks in a month
+        return wagePerHour * monthlyHours;
     };
 
     return (
@@ -179,23 +213,64 @@ const AddEmployee = () => {
                             {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
                         </div>
 
-                        {/* Salary */}
+                        {/* Wage Per Hour */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="salary">
-                                Monthly Salary (PKR) <span className="text-red-500">*</span>
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="wagePerHour">
+                                Wage Per Hour (PKR) <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="number"
-                                id="salary"
-                                name="salary"
-                                value={formData.salary}
+                                id="wagePerHour"
+                                name="wagePerHour"
+                                value={formData.wagePerHour}
                                 onChange={handleChange}
-                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.salary ? 'border-red-500' : 'border-gray-300'
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.wagePerHour ? 'border-red-500' : 'border-gray-300'
                                     }`}
-                                placeholder="50000"
+                                placeholder="500"
                                 min="0"
+                                step="0.01"
                             />
-                            {errors.salary && <p className="mt-1 text-sm text-red-500">{errors.salary}</p>}
+                            {errors.wagePerHour && <p className="mt-1 text-sm text-red-500">{errors.wagePerHour}</p>}
+                        </div>
+
+                        {/* Daily Working Hours */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="dailyWorkingHours">
+                                Daily Working Hours <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                id="dailyWorkingHours"
+                                name="dailyWorkingHours"
+                                value={formData.dailyWorkingHours}
+                                onChange={handleChange}
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.dailyWorkingHours ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                placeholder="8"
+                                min="1"
+                                max="24"
+                            />
+                            {errors.dailyWorkingHours && <p className="mt-1 text-sm text-red-500">{errors.dailyWorkingHours}</p>}
+                        </div>
+
+                        {/* Weekly Working Days */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="weeklyWorkingDays">
+                                Weekly Working Days <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                id="weeklyWorkingDays"
+                                name="weeklyWorkingDays"
+                                value={formData.weeklyWorkingDays}
+                                onChange={handleChange}
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.weeklyWorkingDays ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                placeholder="5"
+                                min="1"
+                                max="7"
+                            />
+                            {errors.weeklyWorkingDays && <p className="mt-1 text-sm text-red-500">{errors.weeklyWorkingDays}</p>}
                         </div>
 
                         {/* Role */}
@@ -253,6 +328,7 @@ const AddEmployee = () => {
                     <div className="mt-8 flex justify-end gap-4">
                         <button
                             type="button"
+                            onClick={() => navigate(-1)}
                             className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50"
                         >
                             Cancel

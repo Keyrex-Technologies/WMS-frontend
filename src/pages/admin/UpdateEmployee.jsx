@@ -4,13 +4,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 const UpdateEmployee = () => {
     const navigate = useNavigate();
-    const { id } = useParams(); // Assuming employee ID is in the URL
+    const { id } = useParams();
     const [employeeData, setEmployeeData] = useState({
         name: '',
         email: '',
         cnic: '',
         phone: '',
-        salary: '',
+        wagePerHour: '',
+        dailyWorkingHours: '',
+        weeklyWorkingDays: '',
         role: 'Employee',
         joiningDate: '',
         address: ''
@@ -29,7 +31,9 @@ const UpdateEmployee = () => {
                 email: 'john.doe@example.com',
                 cnic: '12345-1234567-1',
                 phone: '03001234567',
-                salary: '50000',
+                wagePerHour: '500',
+                dailyWorkingHours: '8',
+                weeklyWorkingDays: '5',
                 role: 'Manager',
                 joiningDate: '2021-01-01',
                 address: '123 Street, City'
@@ -65,8 +69,18 @@ const UpdateEmployee = () => {
         } else if (!/^\d{11,15}$/.test(employeeData.phone)) {
             newErrors.phone = 'Phone must be 11-15 digits';
         }
-        if (!employeeData.salary) newErrors.salary = 'Salary is required';
+        if (!employeeData.wagePerHour) newErrors.wagePerHour = 'Wage per hour is required';
+        if (!employeeData.dailyWorkingHours) newErrors.dailyWorkingHours = 'Daily working hours is required';
+        if (!employeeData.weeklyWorkingDays) newErrors.weeklyWorkingDays = 'Weekly working days is required';
         if (!employeeData.joiningDate) newErrors.joiningDate = 'Joining date is required';
+
+        // Validate working hours constraints
+        if (employeeData.dailyWorkingHours && (employeeData.dailyWorkingHours < 1 || employeeData.dailyWorkingHours > 24)) {
+            newErrors.dailyWorkingHours = 'Must be between 1-24 hours';
+        }
+        if (employeeData.weeklyWorkingDays && (employeeData.weeklyWorkingDays < 1 || employeeData.weeklyWorkingDays > 7)) {
+            newErrors.weeklyWorkingDays = 'Must be between 1-7 days';
+        }
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -78,18 +92,38 @@ const UpdateEmployee = () => {
         if (validateForm()) {
             setIsSubmitting(true);
 
+            // Calculate monthly salary based on the new fields
+            const monthlySalary = calculateMonthlySalary(
+                employeeData.wagePerHour,
+                employeeData.dailyWorkingHours,
+                employeeData.weeklyWorkingDays
+            );
+
+            const updatedEmployeeData = {
+                ...employeeData,
+                monthlySalary // Adding calculated monthly salary to the form data
+            };
+
             // Simulate API call to update employee
             setTimeout(() => {
-                console.log('Employee updated:', employeeData);
+                console.log('Employee updated:', updatedEmployeeData);
                 setIsSubmitting(false);
                 setSuccessMessage('Employee updated successfully!');
+                
                 // Reset form after 2 seconds
                 setTimeout(() => {
                     setSuccessMessage('');
-                    navigate(-1)
+                    navigate(-1);
                 }, 2000);
             }, 1500);
         }
+    };
+
+    // Helper function to calculate monthly salary
+    const calculateMonthlySalary = (wagePerHour, dailyHours, weeklyDays) => {
+        const weeklyHours = dailyHours * weeklyDays;
+        const monthlyHours = weeklyHours * 4; // Approximate 4 weeks in a month
+        return wagePerHour * monthlyHours;
     };
 
     return (
@@ -181,22 +215,61 @@ const UpdateEmployee = () => {
                             {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
                         </div>
 
-                        {/* Salary */}
+                        {/* Wage Per Hour */}
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="salary">
-                                Monthly Salary (PKR) <span className="text-red-500">*</span>
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="wagePerHour">
+                                Wage Per Hour (PKR) <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="number"
-                                id="salary"
-                                name="salary"
-                                value={employeeData.salary}
+                                id="wagePerHour"
+                                name="wagePerHour"
+                                value={employeeData.wagePerHour}
                                 onChange={handleChange}
-                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.salary ? 'border-red-500' : 'border-gray-300'}`}
-                                placeholder="50000"
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.wagePerHour ? 'border-red-500' : 'border-gray-300'}`}
+                                placeholder="500"
                                 min="0"
+                                step="0.01"
                             />
-                            {errors.salary && <p className="mt-1 text-sm text-red-500">{errors.salary}</p>}
+                            {errors.wagePerHour && <p className="mt-1 text-sm text-red-500">{errors.wagePerHour}</p>}
+                        </div>
+
+                        {/* Daily Working Hours */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="dailyWorkingHours">
+                                Daily Working Hours <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                id="dailyWorkingHours"
+                                name="dailyWorkingHours"
+                                value={employeeData.dailyWorkingHours}
+                                onChange={handleChange}
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.dailyWorkingHours ? 'border-red-500' : 'border-gray-300'}`}
+                                placeholder="8"
+                                min="1"
+                                max="24"
+                            />
+                            {errors.dailyWorkingHours && <p className="mt-1 text-sm text-red-500">{errors.dailyWorkingHours}</p>}
+                        </div>
+
+                        {/* Weekly Working Days */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="weeklyWorkingDays">
+                                Weekly Working Days <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                id="weeklyWorkingDays"
+                                name="weeklyWorkingDays"
+                                value={employeeData.weeklyWorkingDays}
+                                onChange={handleChange}
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.weeklyWorkingDays ? 'border-red-500' : 'border-gray-300'}`}
+                                placeholder="5"
+                                min="1"
+                                max="7"
+                            />
+                            {errors.weeklyWorkingDays && <p className="mt-1 text-sm text-red-500">{errors.weeklyWorkingDays}</p>}
                         </div>
 
                         {/* Role */}

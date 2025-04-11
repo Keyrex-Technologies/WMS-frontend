@@ -1,7 +1,7 @@
 import React from 'react';
 import { FiX, FiPrinter, FiDownload } from 'react-icons/fi';
 
-const PayrollModal = ({ payroll, onClose }) => {
+const PayrollModal = ({ payroll, onClose, currentRecords }) => {
   if (!payroll) return null;
 
   return (
@@ -66,10 +66,10 @@ const PayrollModal = ({ payroll, onClose }) => {
                 <div>
                   <p className="text-gray-600">Status:</p>
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${payroll.status === 'Paid'
-                      ? 'bg-green-100 text-green-800'
-                      : payroll.status === 'Pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
+                    ? 'bg-green-100 text-green-800'
+                    : payroll.status === 'Pending'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-red-100 text-red-800'
                     }`}>
                     {payroll.status}
                   </span>

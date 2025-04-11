@@ -4,10 +4,10 @@ import { FaUsers, FaRegClock, FaCheckCircle, FaDollarSign } from 'react-icons/fa
 import GPSMap from '../../components/GPSMap';
 
 const mockEmployees = [
-  { id: 1, name: 'John Doe', clockedIn: true, onTime: true },
-  { id: 2, name: 'Jane Smith', clockedIn: true, onTime: false },
-  { id: 3, name: 'Mike Johnson', clockedIn: false, onTime: false },
-  { id: 4, name: 'Sarah Williams', clockedIn: true, onTime: true },
+  { id: 1, name: 'John Doe', clockIn: '09:00 AM', clockOut: '05:00 PM', onTime: true },
+  { id: 2, name: 'Jane Smith', clockIn: '09:30 AM', clockOut: '05:30 PM', onTime: false },
+  { id: 3, name: 'Mike Johnson', clockIn: null, clockOut: null, onTime: false },
+  { id: 4, name: 'Sarah Williams', clockIn: '08:55 AM', clockOut: '05:00 PM', onTime: true },
 ];
 
 const container = {
@@ -27,10 +27,10 @@ const item = {
 
 const cardHover = {
   scale: 1.03,
-  transition: { 
+  transition: {
     type: "spring",
     stiffness: 300,
-    damping: 10 
+    damping: 10
   }
 };
 
@@ -47,26 +47,26 @@ const ManagerHome = () => {
   }, []);
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
       className="w-full sm:px-6 space-y-8"
     >
       {/* Quick Stats Section */}
-      <motion.div 
+      <motion.div
         variants={container}
         initial="hidden"
         animate="show"
         className="grid grid-cols-1 sm:grid-cols-2 gap-6"
       >
         {/* Total Employees Card */}
-        <motion.div 
+        <motion.div
           variants={item}
           whileHover={cardHover}
           className="bg-gradient-to-r from-blue-400 to-indigo-600 p-6 rounded-lg shadow-lg flex items-center space-x-4"
         >
-          <motion.div 
+          <motion.div
             animate={{ rotate: [0, 10, -10, 0] }}
             transition={{ repeat: Infinity, duration: 4 }}
           >
@@ -74,7 +74,7 @@ const ManagerHome = () => {
           </motion.div>
           <div>
             <h3 className="text-lg font-semibold text-white">Total Employees</h3>
-            <motion.p 
+            <motion.p
               key={totalEmployees}
               initial={{ scale: 1.2 }}
               animate={{ scale: 1 }}
@@ -82,12 +82,11 @@ const ManagerHome = () => {
             >
               {totalEmployees}
             </motion.p>
-            <p className="text-sm text-white mt-1">+5% from last month</p>
           </div>
         </motion.div>
 
         {/* Today's Attendance Card */}
-        <motion.div 
+        <motion.div
           variants={item}
           whileHover={cardHover}
           className="bg-gradient-to-r from-green-400 to-teal-500 p-6 rounded-lg shadow-lg flex items-center space-x-4"
@@ -100,7 +99,7 @@ const ManagerHome = () => {
           </motion.div>
           <div>
             <h3 className="text-lg font-semibold text-white">Today's Attendance</h3>
-            <motion.p 
+            <motion.p
               key={attendanceToday}
               initial={{ scale: 1.2 }}
               animate={{ scale: 1 }}
@@ -113,62 +112,86 @@ const ManagerHome = () => {
         </motion.div>
       </motion.div>
 
-      {/* Today's Employee Attendance */}
-      <motion.div 
+      {/* Today's Employee Attendance Table */}
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
         className="bg-white rounded-lg shadow-lg p-6"
       >
         <h3 className="text-xl font-semibold mb-4 text-gray-800">Today's Employee Attendance</h3>
-        <motion.div 
-          className="space-y-4"
-          variants={container}
-          initial="hidden"
-          animate="show"
-        >
-          <AnimatePresence>
-            {mockEmployees.map(emp => (
-              <motion.div 
-                key={emp.id}
-                variants={item}
-                whileHover={{ scale: 1.01 }}
-                className="flex justify-between sm:flex-row flex-col gap-5 sm:items-center py-3 px-4 border-b border-b-black/10"
-              >
-                <div className="flex items-center space-x-2">
-                  <motion.div
-                    animate={{ rotate: emp.clockedIn ? 0 : [0, 10, -10, 0] }}
-                    transition={emp.clockedIn ? {} : { repeat: Infinity, duration: 2 }}
+        <div className="overflow-x-auto">
+          <motion.table
+            className="min-w-full divide-y divide-gray-200"
+            variants={container}
+            initial="hidden"
+            animate="show"
+          >
+            <thead className="bg-gray-50">
+              <motion.tr variants={item}>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock In</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock Out</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              </motion.tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              <AnimatePresence>
+                {mockEmployees.map((emp) => (
+                  <motion.tr
+                    key={emp.id}
+                    variants={item}
+                    whileHover={{ backgroundColor: "rgba(0, 0, 0, 0.02)" }}
+                    className="hover:bg-gray-50"
                   >
-                    <FaRegClock className="text-gray-500" />
-                  </motion.div>
-                  <p className="text-gray-700 font-medium">{emp.name}</p>
-                </div>
-                <motion.div 
-                  initial={{ scale: 0.9 }}
-                  animate={{ scale: 1 }}
-                  className={`flex items-center space-x-2 p-2 text-sm rounded-full ${emp.clockedIn ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}
-                >
-                  {emp.clockedIn ? (
-                    <>
-                      <FaCheckCircle className="text-green-600" />
-                      <span>Clocked In</span>
-                    </>
-                  ) : (
-                    <>
-                      <FaRegClock className="text-red-600" />
-                      <span>Clocked Out</span>
-                    </>
-                  )}
-                </motion.div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </motion.div>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                          <span className="text-indigo-600 font-medium">{emp.name.charAt(0)}</span>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{emp.name}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {emp.clockIn || <span className="text-gray-400">Not clocked in</span>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {emp.clockOut || <span className="text-gray-400">Not clocked out</span>}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <motion.span
+                        initial={{ scale: 0.9 }}
+                        animate={{ scale: 1 }}
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${emp.clockIn
+                          ? emp.onTime
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                          }`}
+                      >
+                        {emp.clockIn
+                          ? emp.onTime
+                            ? 'On Time'
+                            : 'Late'
+                          : 'Absent'}
+                      </motion.span>
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            </tbody>
+          </motion.table>
+        </div>
       </motion.div>
 
       {/* Live GPS Map Section */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}

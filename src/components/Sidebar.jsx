@@ -24,6 +24,11 @@ const managerNavItems = [
     { href: "/manager/payroll-reports", icon: <MdWork size={18} />, label: "Generate Reports" },
 ];
 
+const userNavItems = [
+    { href: "/user", icon: <MdDashboard size={18} />, label: "Home" },
+    { href: "/user/view-attendance", icon: <MdWork size={18} />, label: "View Attendance" },
+];
+
 const navItemsBottom = [
     { href: "/settings", icon: <MdSettings size={18} />, label: "Settings" },
     { href: "", icon: <MdLogout size={18} />, label: "Logout" },
@@ -66,7 +71,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, userRole }) => {
     const navigate = useNavigate();
 
     // Determine which nav items to display based on the user's role
-    const navItems = userRole === "admin" ? adminNavItems : managerNavItems;
+    const navItems = userRole === "admin" ? adminNavItems : userRole === "manager" ? managerNavItems : userNavItems;
 
     return (
         <div

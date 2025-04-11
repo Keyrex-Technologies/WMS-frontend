@@ -4,11 +4,34 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const EmployeeManagement = () => {
     const navigate = useNavigate();
-
     const [employees, setEmployees] = useState([
-        { id: 1, name: "John Doe", email: "john@example.com", role: "Employee", status: "Active", lastActive: "Today" },
-        { id: 2, name: "Jane Smith", email: "jane@example.com", role: "Manager", status: "Active", lastActive: "Yesterday" },
-        { id: 3, name: "Alex Johnson", email: "alex@example.com", role: "Employee", status: "Inactive", lastActive: "2 days ago" },
+        {
+            id: 1,
+            employeeId: 'EMP-001',
+            name: "John Doe",
+            email: "john@example.com",
+            role: "Employee",
+            status: "Active",
+            lastActive: "Today",
+        },
+        {
+            id: 2,
+            employeeId: 'EMP-002',
+            name: "Jane Smith",
+            email: "jane@example.com",
+            role: "Manager",
+            status: "Active",
+            lastActive: "Yesterday",
+        },
+        {
+            id: 3,
+            employeeId: 'EMP-003',
+            name: "Alex Johnson",
+            email: "alex@example.com",
+            role: "Employee",
+            status: "Inactive",
+            lastActive: "2 days ago",
+        },
     ]);
 
     const [searchTerm, setSearchTerm] = useState("");
@@ -70,14 +93,14 @@ const EmployeeManagement = () => {
     };
 
     return (
-        <motion.div 
+        <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
             className="w-full px-6"
         >
             {/* Header */}
-            <motion.div 
+            <motion.div
                 initial={{ y: -20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.4 }}
@@ -88,7 +111,7 @@ const EmployeeManagement = () => {
             </motion.div>
 
             {/* Search and Add Employee */}
-            <motion.div 
+            <motion.div
                 initial={{ y: -10, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
@@ -134,6 +157,9 @@ const EmployeeManagement = () => {
                         <thead className="bg-gray-50">
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Emp_ID
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Name
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -165,9 +191,12 @@ const EmployeeManagement = () => {
                                         layout
                                         className={deletingId === employee.id ? "bg-red-50" : ""}
                                     >
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {employee.employeeId}
+                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
-                                                <motion.div 
+                                                <motion.div
                                                     whileHover={{ scale: 1.1 }}
                                                     className="flex-shrink-0 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center"
                                                 >
@@ -188,11 +217,10 @@ const EmployeeManagement = () => {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <motion.span
                                                 whileHover={{ scale: 1.05 }}
-                                                className={`px-2 py-1 text-xs rounded-full ${
-                                                    employee.role === "Manager"
-                                                        ? "bg-purple-100 text-purple-800"
-                                                        : "bg-green-100 text-green-800"
-                                                }`}
+                                                className={`px-2 py-1 text-xs rounded-full ${employee.role === "Manager"
+                                                    ? "bg-purple-100 text-purple-800"
+                                                    : "bg-green-100 text-green-800"
+                                                    }`}
                                             >
                                                 {employee.role}
                                             </motion.span>
@@ -200,11 +228,10 @@ const EmployeeManagement = () => {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <motion.span
                                                 whileHover={{ scale: 1.05 }}
-                                                className={`px-2 py-1 text-xs rounded-full ${
-                                                    employee.status === "Active"
-                                                        ? "bg-green-100 text-green-800"
-                                                        : "bg-red-100 text-red-800"
-                                                }`}
+                                                className={`px-2 py-1 text-xs rounded-full ${employee.status === "Active"
+                                                    ? "bg-green-100 text-green-800"
+                                                    : "bg-red-100 text-red-800"
+                                                    }`}
                                             >
                                                 {employee.status}
                                             </motion.span>
@@ -232,11 +259,10 @@ const EmployeeManagement = () => {
                                             <motion.button
                                                 whileHover={{ scale: 1.05 }}
                                                 whileTap={{ scale: 0.95 }}
-                                                className={`text-sm px-3 py-1 rounded-lg ${
-                                                    employee.status === "Active"
-                                                        ? "bg-gray-300 text-gray-700"
-                                                        : "bg-green-600 text-white"
-                                                }`}
+                                                className={`text-sm px-3 py-1 rounded-lg ${employee.status === "Active"
+                                                    ? "bg-gray-300 text-gray-700"
+                                                    : "bg-green-600 text-white"
+                                                    }`}
                                                 onClick={() => handleStatusToggle(employee.id)}
                                             >
                                                 {employee.status === "Active" ? "Deactivate" : "Activate"}
@@ -251,7 +277,7 @@ const EmployeeManagement = () => {
             </div>
 
             {/* Pagination */}
-            <motion.div 
+            <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}

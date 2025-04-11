@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiSearch, FiClock, FiDollarSign, FiCalendar, FiChevronDown, FiUser } from 'react-icons/fi';
 
-const PayrollManagement = () => {
+const PayrollReport = () => {
   const [records, setRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
@@ -448,4 +448,4 @@ const PayrollManagement = () => {
   );
 };
 
-export default PayrollManagement;
+export default PayrollReport;

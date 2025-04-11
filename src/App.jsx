@@ -9,13 +9,15 @@ import AdminHome from "./pages/admin/AdminHome";
 import EmployeeManagement from "./pages/admin/EmployeeManagement";
 import AddEmployee from "./pages/admin/AddEmployee";
 import UpdateEmployee from "./pages/admin/UpdateEmployee";
-import AttendanceManagement from "./pages/admin/AttendanceManagement";
+import AttendanceManagement from "./pages/common/AttendanceManagement";
 import Settings from "./pages/admin/Settings";
 import PayrollManagement from "./pages/admin/PayrollManagement";
-import GenerateReport from "./pages/admin/GenerateReport";
+// import GenerateReport from "./pages/admin/GenerateReport";
 import ManagerHome from "./pages/manager/ManagerHome";
-import PayrollReports from "./pages/manager/PayrollReports";
+import PayrollReport from "./pages/common/PayrollReport";
 import Profile from "./pages/manager/Profile";
+import UserHome from "./pages/user/UserHome";
+import ViewAttendance from "./pages/user/ViewAttendance";
 
 const Loader = lazy(() => import("./components/Loader"));
 const AuthLayout = lazy(() => import("./layouts/AuthLayout"));
@@ -46,7 +48,7 @@ const appRouter = createBrowserRouter([
       { path: "add-employee", element: <AddEmployee /> },
       { path: "update-employee/:id", element: <UpdateEmployee /> },
       { path: "attendance-management", element: <AttendanceManagement /> },
-      { path: "payroll-management", element: <PayrollManagement /> },
+      { path: "payroll-management", element: <PayrollReport /> },
       // { path: "reports", element: <GenerateReport /> },
       { path: "settings", element: <Settings /> },
 
@@ -59,7 +61,17 @@ const appRouter = createBrowserRouter([
     children: [
       { path: "", element: <ManagerHome /> },
       { path: "attendance-management", element: <AttendanceManagement /> },
-      { path: "payroll-reports", element: <PayrollReports /> },
+      { path: "payroll-reports", element: <PayrollReport /> },
+      { path: "settings", element: <Profile /> },
+    ],
+  },
+  {
+    path: "/user",
+    element: <DashbaordLayout userRole={"user"} />,
+    errorElement: <Error />,
+    children: [
+      { path: "", element: <UserHome /> },
+      { path: "view-attendance", element: <ViewAttendance /> },
       { path: "settings", element: <Profile /> },
     ],
   },
