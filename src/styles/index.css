@@ -42,3 +42,16 @@
 .animate-spin-slow {
     animation: spin 20s linear infinite;
 }
+
+.go3958317564{
+    justify-content: flex-start !important;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    width: 350px !important;
+}
+.go2072408551{
+    max-width: 400px !important;
+    min-height: 40px !important;
+    padding: 30px 20px !important;
+}

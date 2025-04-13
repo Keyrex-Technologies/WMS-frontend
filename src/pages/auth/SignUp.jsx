@@ -1,12 +1,26 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { ChefHat, Building2, Users, Clock, Utensils } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ChefHat, Building2, Users, Clock, Utensils, EyeOff, Eye } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import PrimaryButton from '../../components/PrimaryButton';
+import { registerUser } from '../../utils/auth';
+import { toast } from 'react-toastify';
+import Cookies from 'js-cookie';
 
 function SignUp() {
   const canvasRef = useRef(null);
+  const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(prev => !prev);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(prev => !prev);
+  };
 
   const validationSchema = Yup.object({
     fullName: Yup.string()
@@ -15,7 +29,7 @@ function SignUp() {
     email: Yup.string()
       .email('Invalid email address')
       .required('Email is required'),
-    phone: Yup.string()
+    phoneNumber: Yup.string()
       .matches(/^[0-9]{10,11}$/, 'Phone number must be 10-11 digits')
       .required('Phone number is required'),
     employeeId: Yup.string()
@@ -34,6 +48,27 @@ function SignUp() {
       .oneOf([Yup.ref('password')], 'Passwords must match')
       .required('Please confirm your password'),
   });
+
+  const handleSubmit = async (values, { setSubmitting }) => {
+    try {
+      const data = {
+        ...values,
+        name: values.fullName,
+      }
+
+      const response = await registerUser(data);
+      if (response.status) {
+        Cookies.set("email", values.email)
+        toast.success(response.data.message);
+        navigate('/verify-otp')
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.message || e.response?.data?.error || "Something went wrong!");
+    }
+    finally {
+      setSubmitting(false);
+    }
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -154,20 +189,14 @@ function SignUp() {
             initialValues={{
               fullName: '',
               email: '',
-              phone: '',
+              phoneNumber: '',
               employeeId: '',
               cnic: '',
               password: '',
               confirmPassword: '',
             }}
             validationSchema={validationSchema}
-            onSubmit={(values, { setSubmitting }) => {
-              console.log(values);
-              setTimeout(() => {
-                alert('Registration successful!');
-                setSubmitting(false);
-              }, 500);
-            }}
+            onSubmit={handleSubmit}
           >
             {({ isSubmitting }) => (
               <Form className="space-y-6">
@@ -175,11 +204,9 @@ function SignUp() {
                   {[
                     { name: 'fullName', label: 'Full Name', type: 'text' },
                     { name: 'email', label: 'Work Email', type: 'email' },
-                    { name: 'phone', label: 'Phone Number', type: 'tel' },
+                    { name: 'phoneNumber', label: 'Phone Number', type: 'tel' },
                     { name: 'employeeId', label: 'Employee ID', type: 'text' },
                     { name: 'cnic', label: 'CNIC', type: 'text' },
-                    { name: 'password', label: 'Create Password', type: 'password', fullWidth: true },
-                    { name: 'confirmPassword', label: 'Confirm Password', type: 'password', fullWidth: true },
                   ].map((field) => (
                     <div key={field.name} className={field.fullWidth ? 'md:col-span-2' : ''}>
                       <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-2">
@@ -194,6 +221,52 @@ function SignUp() {
                       <ErrorMessage name={field.name} component="div" className="mt-1 text-sm text-red-600" />
                     </div>
                   ))}
+
+                  {/* Password Field */}
+                  <div className="md:col-span-2 relative">
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                      Create Password
+                    </label>
+                    <div className="relative">
+                      <Field
+                        type={showPassword ? 'text' : 'password'}
+                        name="password"
+                        placeholder="Enter your password"
+                        className="w-full px-4 py-3 bg-gray-50 border-0 rounded-lg outline-none transition-all duration-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    <ErrorMessage name="password" component="div" className="mt-1 text-sm text-red-600" />
+                  </div>
+
+                  {/* Confirm Password Field */}
+                  <div className="md:col-span-2 relative">
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                      Confirm Password
+                    </label>
+                    <div className="relative">
+                      <Field
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        name="confirmPassword"
+                        placeholder="Confirm your password"
+                        className="w-full px-4 py-3 bg-gray-50 border-0 rounded-lg outline-none transition-all duration-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={toggleConfirmPasswordVisibility}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                      >
+                        {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    <ErrorMessage name="confirmPassword" component="div" className="mt-1 text-sm text-red-600" />
+                  </div>
                 </div>
 
                 <PrimaryButton

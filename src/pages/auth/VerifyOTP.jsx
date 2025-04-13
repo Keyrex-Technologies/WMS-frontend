@@ -1,49 +1,76 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Formik, Form } from 'formik';
+import { InputOTP } from "antd-input-otp";
 import * as Yup from 'yup';
 import { Utensils, Lock } from 'lucide-react';
 import PrimaryButton from '../../components/PrimaryButton';
+import { resendOTP, verifyOtp, verifyOtpReset } from '../../utils/auth';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import Cookies from 'js-cookie';
 
 function VerifyOTP() {
     const canvasRef = useRef(null);
-    const inputRefs = useRef([]);
-    const [otp, setOtp] = useState(Array(6).fill(''));
+    const navigate = useNavigate();
+    const location = useLocation();
+    const email = location?.state?.email;
+    const type = location?.state?.type;
 
     const validationSchema = Yup.object({
         otp: Yup.string()
-            .matches(/^\d{6}$/, 'OTP must be a 6-digit number')
+            .length(4, 'OTP must be exactly 4 digits')
+            .matches(/^\d+$/, 'OTP must contain only digits')
             .required('OTP is required'),
     });
 
-    const handleChange = (e, index) => {
-        const { value } = e.target;
-        if (/^[0-9]?$/.test(value)) {
-            const newOtp = [...otp];
-            newOtp[index] = value;
-            setOtp(newOtp);
-
-            if (value !== '' && index < 5) {
-                inputRefs.current[index + 1]?.focus();
-            }
-        }
-    };
-
-    const handleKeyDown = (e, index) => {
-        if (e.key === 'Backspace') {
-            if (otp[index] === '') {
-                if (index > 0) {
-                    const newOtp = [...otp];
-                    newOtp[index - 1] = '';
-                    setOtp(newOtp);
-                    inputRefs.current[index - 1]?.focus();
+    const handleSubmit = async (values, { setSubmitting }) => {
+        try {
+            if (type) {
+                const data = {
+                    email: email,
+                    otp: values.otp
+                }
+                const response = await verifyOtpReset(data);
+                if (response.status) {
+                    toast.success(response.data?.message);
+                    navigate('/reset-password', {
+                        state: { email: email },
+                    });
                 }
             } else {
-                const newOtp = [...otp];
-                newOtp[index] = '';
-                setOtp(newOtp);
+                const email = Cookies.get("email")
+                const data = {
+                    email,
+                    otp: values.otp
+                }
+                const response = await verifyOtp(data);
+                if (response.status) {
+                    Cookies.remove("email")
+                    toast.success(response.data?.message);
+                    navigate('/');
+                }
             }
+        } catch (e) {
+            console.log(e.message);
+            toast.error(e.response?.data?.message || e.response?.data?.error || e.message || "Something went wrong!");
+        } finally {
+            setSubmitting(false);
         }
     };
+
+    const handleResendOTP = async () => {
+        try {
+            const data = {
+                email: email
+            }
+            const response = await resendOTP(data);
+            if (response.status) {
+                toast.success(response.data?.message);
+            }
+        } catch (e) {
+            toast.error(e.response?.data?.message || e.response?.data?.error || e.message || "Something went wrong!");
+        }
+    }
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -134,12 +161,10 @@ function VerifyOTP() {
                         Verify Your Identity
                     </h2>
                     <div className="space-y-6">
-                        {[{ icon: Lock, text: 'OTP Verification' }].map((feature, index) => (
-                            <div key={index} className="flex items-center gap-4 text-white/90">
-                                <feature.icon className="w-6 h-6 text-blue-300" />
-                                <span className="text-lg">{feature.text}</span>
-                            </div>
-                        ))}
+                        <div className="flex items-center gap-4 text-white/90">
+                            <Lock className="w-6 h-6 text-blue-300" />
+                            <span className="text-lg">OTP Verification</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -149,45 +174,43 @@ function VerifyOTP() {
                 <div className="w-full max-w-xl">
                     <div className="mb-12">
                         <h3 className="text-4xl font-bold text-gray-900 mb-3">Verify OTP</h3>
-                        <p className="text-gray-600 text-lg">Enter the 6-digit code sent to your email</p>
+                        <p className="text-gray-600 text-lg">Enter the 4-digit code sent to your email</p>
                     </div>
 
                     <Formik
-                        initialValues={{ otp: otp.join('') }}
+                        initialValues={{ otp: '' }}
                         validationSchema={validationSchema}
-                        onSubmit={(values, { setSubmitting }) => {
-                            console.log('OTP Entered:', otp.join(''));
-                            setTimeout(() => {
-                                alert('OTP Verified!');
-                                setSubmitting(false);
-                            }, 500);
-                        }}
+                        onSubmit={handleSubmit}
                     >
-                        {({ isSubmitting }) => (
+                        {({ isSubmitting, setFieldValue, values, errors, touched }) => (
                             <Form className="space-y-6">
-                                <div className="flex gap-3">
-                                    {otp.map((digit, index) => (
-                                        <input
-                                            key={index}
-                                            type="text"
-                                            inputMode="numeric"
-                                            maxLength={1}
-                                            ref={(el) => (inputRefs.current[index] = el)}
-                                            className="w-12 h-12 border border-gray-300 rounded-md text-center text-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                            value={digit}
-                                            onChange={(e) => handleChange(e, index)}
-                                            onKeyDown={(e) => handleKeyDown(e, index)}
-                                            id={`otp-${index}`}
-                                        />
-                                    ))}
+                                <div className='w-fit'>
+                                    <InputOTP
+                                        value={values.otp.split('')}
+                                        onChange={(value) => {
+                                            if (Array.isArray(value)) {
+                                                const otpString = value.join('').slice(0, 4);
+                                                setFieldValue('otp', otpString);
+                                            } else {
+                                                const clean = String(value).replace(/\D/g, '').slice(0, 4);
+                                                setFieldValue('otp', clean);
+                                            }
+                                        }}
+                                        length={4}
+                                        inputType="numeric"
+                                        autoFocus
+                                        className="flex gap-3"
+                                        inputClassName="!w-12 !h-12 !border !border-gray-300 !rounded-md !text-center !text-xl !focus:outline-none !focus:ring-2 !focus:ring-blue-400"
+                                    />
                                 </div>
-                                {otp.join('').length !== 6 && (
-                                    <div className="text-sm text-red-600">OTP must be a 6-digit number</div>
+
+                                {errors.otp && touched.otp && (
+                                    <div className="text-sm text-red-600">{errors.otp}</div>
                                 )}
 
                                 <PrimaryButton
                                     type="submit"
-                                    disabled={isSubmitting || otp.join('').length !== 6}
+                                    disabled={isSubmitting}
                                     text={isSubmitting ? 'Verifying...' : 'Verify OTP'}
                                 />
                             </Form>
@@ -196,7 +219,7 @@ function VerifyOTP() {
 
                     <p className="text-gray-600 mt-8">
                         Didn’t receive the code?{' '}
-                        <span className="text-blue-900 hover:text-blue-700 font-medium cursor-pointer">
+                        <span onClick={handleResendOTP} className="text-blue-900 hover:text-blue-700 font-medium cursor-pointer">
                             Resend
                         </span>
                     </p>

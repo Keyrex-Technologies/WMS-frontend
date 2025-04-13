@@ -9,6 +9,7 @@ import {
     MdClose,
 } from "react-icons/md";
 import { IoMdCash } from "react-icons/io";
+import Cookies from "js-cookie";
 
 const adminNavItems = [
     { href: "/admin", icon: <MdDashboard size={18} />, label: "Dashboard" },
@@ -70,7 +71,12 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, userRole }) => {
     const pathname = location.pathname;
     const navigate = useNavigate();
 
-    // Determine which nav items to display based on the user's role
+    const handleLogout = () => {
+        Cookies.remove("token");
+        Cookies.remove("user");
+        navigate('/')
+    }
+
     const navItems = userRole === "admin" ? adminNavItems : userRole === "manager" ? managerNavItems : userNavItems;
 
     return (
@@ -104,13 +110,22 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, userRole }) => {
                 <div className="w-full">
                     <ul className="w-full pt-8 flex flex-col gap-2">
                         {navItemsBottom.map((item) => (
-                            <NavItem
-                                key={item.href}
-                                {...item}
-                                href={item.label === "Settings" ? `/${userRole}${item.href}` : item.href}
-                                onClick={item.href === "" ? () => navigate('/') : undefined}
-                                isActive={pathname === `/${userRole}${item.href}`}
-                            />
+                            item.label === "Settings" ? (
+                                <NavItem
+                                    key={item.href}
+                                    {...item}
+                                    href={`/${userRole}${item.href}`}
+                                    onClick={undefined}
+                                    isActive={pathname === `/${userRole}${item.href}`}
+                                />
+                            ) : (
+                                <li key={item.href} onClick={handleLogout} className={`w-full cursor-pointer flex items-center gap-4 p-3 rounded-2xl text-xs font-montserrat transition-all text-textlight font-medium`}>
+                                    <div className={`w-[30px] h-[30px] rounded-xl flex items-center justify-center bg-white text-primary shadow-card-shadow`}>
+                                        {item.icon}
+                                    </div>
+                                    {item.label}
+                                </li>
+                            )
                         ))}
                     </ul>
                 </div>

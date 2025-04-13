@@ -113,32 +113,6 @@ const AdminHome = () => {
             <p className="text-sm text-white mt-1">{mockEmployees.filter(emp => emp.clockIn).length}/{mockEmployees.length} employees checked in</p>
           </div>
         </motion.div>
-
-        {/* Pending Payroll Card */}
-        {/* <motion.div
-          variants={item}
-          whileHover={cardHover}
-          className="bg-gradient-to-r from-orange-400 to-red-500 p-6 rounded-lg shadow-lg flex items-center space-x-4"
-        >
-          <motion.div
-            animate={{ rotate: [0, 5, -5, 0] }}
-            transition={{ repeat: Infinity, duration: 3 }}
-          >
-            <MdPendingActions className="text-white text-3xl" />
-          </motion.div>
-          <div>
-            <h3 className="text-lg font-semibold text-white">Pending Payroll</h3>
-            <motion.p
-              key={pendingPayroll}
-              initial={{ scale: 1.2 }}
-              animate={{ scale: 1 }}
-              className="text-3xl font-bold text-white mt-2"
-            >
-              {pendingPayroll}
-            </motion.p>
-            <p className="text-sm text-white mt-1">Requires approval</p>
-          </div>
-        </motion.div> */}
       </motion.div>
 
       {/* Today's Employee Attendance Table */}
@@ -217,23 +191,6 @@ const AdminHome = () => {
             </tbody>
           </motion.table>
         </div>
-      </motion.div>
-
-      {/* Live GPS Map Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="bg-white rounded-lg shadow-lg p-6"
-      >
-        <h3 className="text-xl font-semibold mb-4 text-gray-800">Live GPS Map</h3>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          <GPSMap setLivePosition={setMapCenter} zoneRadius={zoneRadius} mapCenter={mapCenter} />
-        </motion.div>
       </motion.div>
     </motion.div>
   );

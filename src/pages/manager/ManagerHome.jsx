@@ -189,23 +189,6 @@ const ManagerHome = () => {
           </motion.table>
         </div>
       </motion.div>
-
-      {/* Live GPS Map Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="bg-white rounded-lg shadow-lg p-6"
-      >
-        <h3 className="text-xl font-semibold mb-4 text-gray-800">Live GPS Map</h3>
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          <GPSMap setLivePosition={setMapCenter} zoneRadius={zoneRadius} mapCenter={mapCenter} />
-        </motion.div>
-      </motion.div>
     </motion.div>
   );
 };

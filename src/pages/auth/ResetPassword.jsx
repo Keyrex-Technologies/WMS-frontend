@@ -1,12 +1,46 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { Utensils, Lock, ShieldCheck } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Utensils, ShieldCheck, EyeOff, Eye } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import PrimaryButton from '../../components/PrimaryButton';
+import { resetPassword } from '../../utils/auth';
+import { toast } from 'react-toastify';
 
 function ResetPassword() {
     const canvasRef = useRef(null);
+    const location = useLocation();
+    const navigate = useNavigate();
+    const email = location?.state?.email;
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+    const togglePasswordVisibility = () => {
+        setShowPassword(prev => !prev);
+    };
+
+    const toggleConfirmPasswordVisibility = () => {
+        setShowConfirmPassword(prev => !prev);
+    };
+
+    const handleSubmit = async (values, { setSubmitting }) => {
+        try {
+            const data = {
+                email: email,
+                password: values.password
+            }
+            const response = await resetPassword(data);
+            if (response.status) {
+                toast.success(response.data?.message);
+                navigate("/");
+            }
+        } catch (e) {
+            toast.error(e.response?.data?.message || e.response?.data?.error || e.message || "Something went wrong!");
+        }
+        finally {
+            setSubmitting(false);
+        }
+    }
 
     const validationSchema = Yup.object({
         password: Yup.string()
@@ -130,13 +164,7 @@ function ResetPassword() {
                             confirmPassword: '',
                         }}
                         validationSchema={validationSchema}
-                        onSubmit={(values, { setSubmitting }) => {
-                            console.log('Reset values:', values);
-                            setTimeout(() => {
-                                alert('Password reset successful!');
-                                setSubmitting(false);
-                            }, 800);
-                        }}
+                        onSubmit={handleSubmit}
                     >
                         {({ isSubmitting }) => (
                             <Form className="space-y-6">
@@ -149,12 +177,42 @@ function ResetPassword() {
                                             <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-2">
                                                 {field.label}
                                             </label>
-                                            <Field
-                                                type={field.type}
-                                                name={field.name}
-                                                className="w-full px-4 py-3 bg-gray-50 border-0 rounded-lg outline-none transition-all duration-200"
-                                                placeholder={`Enter your ${field.label.toLowerCase()}`}
-                                            />
+
+                                            <div className="relative">
+                                                {field.name === "password" ? (
+                                                    <>
+                                                        <Field
+                                                            type={showPassword ? 'text' : 'password'}
+                                                            name="password"
+                                                            placeholder={`Enter your ${field.label.toLowerCase()}`}
+                                                            className="w-full px-4 py-3 bg-gray-50 border-0 rounded-lg outline-none transition-all duration-200"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={togglePasswordVisibility}
+                                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                                                        >
+                                                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Field
+                                                            type={showConfirmPassword ? 'text' : 'password'}
+                                                            name="confirmPassword"
+                                                            placeholder={`Enter your ${field.label.toLowerCase()}`}
+                                                            className="w-full px-4 py-3 bg-gray-50 border-0 rounded-lg outline-none transition-all duration-200"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={toggleConfirmPasswordVisibility}
+                                                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                                                        >
+                                                            {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
                                             <ErrorMessage name={field.name} component="div" className="mt-1 text-sm text-red-600" />
                                         </div>
                                     ))}
@@ -177,7 +235,7 @@ function ResetPassword() {
                     </p>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
 

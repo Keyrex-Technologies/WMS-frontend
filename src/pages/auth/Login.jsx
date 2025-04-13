@@ -1,13 +1,22 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
-import { ChefHat, Building2, Users, Clock, Utensils } from 'lucide-react';
+import { ChefHat, Building2, Users, Clock, Utensils, EyeOff, Eye } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import PrimaryButton from '../../components/PrimaryButton';
+import { toast } from 'react-toastify';
+import { signInUser } from '../../utils/auth';
+import Cookies from 'js-cookie';
 
 function Login() {
     const canvasRef = useRef(null);
     const navigate = useNavigate();
+    const [showPassword, setShowPassword] = useState(false);
+
+
+    const togglePasswordVisibility = () => {
+        setShowPassword(prev => !prev);
+    };
 
     const validationSchema = Yup.object({
         email: Yup.string()
@@ -20,6 +29,24 @@ function Login() {
             .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
             .matches(/[A-Z]/, 'Password must contain at least one uppercase letter'),
     });
+
+    const handleSubmit = async (values, { setSubmitting }) => {
+        try {
+            const response = await signInUser(values);
+            if (response.status) {
+                toast.success(response.data?.message);
+                Cookies.set('token', response.data?.token);
+                Cookies.set('user', JSON.stringify(response.data?.user));
+                navigate('/user')
+            }
+        } catch (e) {
+            toast.error(e.response?.data?.message || e.response?.data?.error || "Something went wrong!");
+        }
+        finally {
+            setSubmitting(false);
+        }
+
+    }
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -142,31 +169,44 @@ function Login() {
                             password: '',
                         }}
                         validationSchema={validationSchema}
-                        onSubmit={(values, { setSubmitting }) => {
-                            console.log(values);
-                            setTimeout(() => {
-                                navigate("/admin")
-                                setSubmitting(false);
-                            }, 500);
-                        }}
+                        onSubmit={handleSubmit}
                     >
                         {({ isSubmitting }) => (
                             <Form className="space-y-6">
                                 <div className="grid grid-cols-1 gap-6">
                                     {[
                                         { name: 'email', label: 'Work Email', type: 'email' },
-                                        { name: 'password', label: 'Password', type: 'password', fullWidth: true },
+                                        { name: 'password', label: 'Password', type: 'password' },
                                     ].map((field) => (
                                         <div key={field.name} className={field.fullWidth ? 'md:col-span-2' : ''}>
                                             <label htmlFor={field.name} className="block text-sm font-medium text-gray-700 mb-2">
                                                 {field.label}
                                             </label>
-                                            <Field
-                                                type={field.type}
-                                                name={field.name}
-                                                className="w-full px-4 py-3 bg-gray-50 border-0 rounded-lg outline-none transition-all duration-200"
-                                                placeholder={`Enter your ${field.label.toLowerCase()}`}
-                                            />
+
+                                            {field.name === "password" ? (
+                                                <div className="relative">
+                                                    <Field
+                                                        type={showPassword ? 'text' : 'password'}
+                                                        name={field.name}
+                                                        placeholder={`Enter your ${field.label.toLowerCase()}`}
+                                                        className="w-full px-4 py-3 bg-gray-50 border-0 rounded-lg outline-none transition-all duration-200"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={togglePasswordVisibility}
+                                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                                                    >
+                                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <Field
+                                                    type={field.type}
+                                                    name={field.name}
+                                                    className="w-full px-4 py-3 bg-gray-50 border-0 rounded-lg outline-none transition-all duration-200"
+                                                    placeholder={`Enter your ${field.label.toLowerCase()}`}
+                                                />
+                                            )}
                                             <ErrorMessage name={field.name} component="div" className="mt-1 text-sm text-red-600" />
                                         </div>
                                     ))}
@@ -177,7 +217,7 @@ function Login() {
                                         Forgot Password?
                                     </Link>
                                 </p>
-                                
+
                                 <PrimaryButton
                                     type="submit"
                                     disabled={isSubmitting}

@@ -16,14 +16,15 @@ import PayrollManagement from "./pages/admin/PayrollManagement";
 import ManagerHome from "./pages/manager/ManagerHome";
 import PayrollReport from "./pages/common/PayrollReport";
 import Profile from "./pages/manager/Profile";
-import UserHome from "./pages/user/UserHome";
 import ViewAttendance from "./pages/user/ViewAttendance";
+import UserHome from "./pages/user/UserHome";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Loader = lazy(() => import("./components/Loader"));
 const AuthLayout = lazy(() => import("./layouts/AuthLayout"));
 const SignUp = lazy(() => import("./pages/auth/SignUp"));
 const Error = lazy(() => import("./components/Error"));
-
 
 const appRouter = createBrowserRouter([
   {
@@ -78,13 +79,25 @@ const appRouter = createBrowserRouter([
   {
     path: "*",
     element: <Error />
-  }  
+  }
 ]);
 
 const App = () => {
   return (
     <Suspense fallback={<Loader />}>
       <RouterProvider router={appRouter} />
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
     </Suspense>
   );
 };

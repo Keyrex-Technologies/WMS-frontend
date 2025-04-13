@@ -1,202 +1,140 @@
-// // GPSMap.jsx
-// import React, { useEffect, useState } from 'react';
-// import { MapContainer, TileLayer, Circle, Marker, Popup, useMap } from 'react-leaflet';
-// import L from 'leaflet';
-// import 'leaflet/dist/leaflet.css';
-
-// // Red marker icon for current user
-// const redMarkerIcon = new L.Icon({
-//   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-//   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-//   iconSize: [25, 41],
-//   iconAnchor: [12, 41],
-//   popupAnchor: [1, -34],
-//   shadowSize: [41, 41],
-// });
-
-// function LocationMarker({ setLivePosition, direction, zoneRadius }) {
-//   const [position, setPosition] = useState(null);
-//   const [hasCentered, setHasCentered] = useState(false);
-//   const [zoneRadiusInMeters] = useState(zoneRadius); // Zone radius (10 meters)
-//   const map = useMap();
-
-//   useEffect(() => {
-//     const updateLocation = () => {
-//       navigator.geolocation.getCurrentPosition(
-//         (pos) => {
-//           const latlng = {
-//             lat: pos.coords.latitude,
-//             lng: pos.coords.longitude,
-//           };
-
-//           // Update the current location in state and localStorage
-//           setPosition(latlng);
-//           setLivePosition(latlng);
-
-//           // Log the live location
-//           console.log(`Live Location: Latitude: ${latlng.lat}, Longitude: ${latlng.lng}`);
-
-//           if (!hasCentered) {
-//             map.flyTo(latlng, 21); // Zoomed in to level 21
-//             setHasCentered(true);
-//           }
-//         },
-//         (err) => console.error('Location error:', err.message),
-//         { enableHighAccuracy: true }
-//       );
-//     };
-
-//     // Call updateLocation every second
-//     const intervalId = setInterval(updateLocation, 1000);
-
-//     return () => {
-//       clearInterval(intervalId); // Cleanup interval on component unmount
-//     };
-//   }, [map, hasCentered, setLivePosition]);
-
-//   if (!position) return null;
-
-//   const fixedLocation = { lat: 33.5536906, lng: 73.1023558 }; // Fixed location
-//   const rotateIcon = direction ? { transform: `rotate(${direction}deg)` } : {}; // Direction
-
-//   return (
-//     <>
-//       <Marker position={position} icon={redMarkerIcon} iconOptions={rotateIcon}>
-//         <Popup>
-//           <div className="p-2">
-//             <p className="font-medium text-gray-900">Your Location</p>
-//             <p className="text-sm text-gray-600">
-//               Lat: {position.lat.toFixed(4)}, Lng: {position.lng.toFixed(4)}
-//             </p>
-//           </div>
-//         </Popup>
-//       </Marker>
-//       <Circle
-//         center={fixedLocation} // Fixed location for the circle
-//         radius={zoneRadiusInMeters}
-//         pathOptions={{
-//           color: 'blue',
-//           fillColor: 'blue',
-//           fillOpacity: 0.2,
-//         }}
-//       />
-//     </>
-//   );
-// }
-
-// function GPSMap({ setLivePosition, direction, zoneRadius, mapCenter }) {
-//   return (
-//     <MapContainer
-//       center={mapCenter}
-//       zoom={13}
-//       scrollWheelZoom={false}
-//       className="w-full h-96 z-10"
-//     >
-//       <TileLayer
-//         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-//       />
-//       <LocationMarker setLivePosition={setLivePosition} direction={direction} zoneRadius={zoneRadius} />
-//     </MapContainer>
-//   );
-// }
-
-// export default GPSMap;
-
-// GPSMap.jsx
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { GoogleMap, Marker, Circle, InfoWindow, useJsApiLoader } from '@react-google-maps/api';
+import React, { useState, useEffect, useCallback } from 'react';
+import { GoogleMap, Marker, Circle, useJsApiLoader } from '@react-google-maps/api';
 
 const containerStyle = {
   width: '100%',
-  height: '400px'
+  height: '400px',
 };
 
-const GPSMap = ({ setLivePosition, direction, zoneRadius = 5, mapCenter }) => {
+const GPSMap = ({
+  setLivePosition,
+  zoneRadius = 10,
+  mapCenter,
+  isInZone,
+  setIsInZone,
+  userHeading,
+  setIsClockIn,
+  setClockInTime,
+  setClockOutTime,
+  isClockIn,
+  setUserHeading,
+}) => {
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
-    libraries: ['geometry']
+    googleMapsApiKey: import.meta.env.VITE_APP_GOOGLE_MAPS_API_KEY,
+    libraries: ['geometry'],
   });
 
   const [currentPosition, setCurrentPosition] = useState(null);
-  const [showInfoWindow, setShowInfoWindow] = useState(false);
   const [map, setMap] = useState(null);
-  const [isInZone, setIsInZone] = useState(false);
-  const fixedLocation = useMemo(() => ({ lat: 33.5536906, lng: 73.1023558 }), []);
+  const [positionValid, setPositionValid] = useState(false);
 
-  // Calculate distance between two points using Haversine formula
-  const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Earth radius in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    return R * c * 1000; // Distance in meters
-  }, []);
-
-  // Check zone status
-  const checkZoneStatus = useCallback((position) => {
-    if (!position) return false;
-    const distance = calculateDistance(
-      position.lat,
-      position.lng,
-      fixedLocation.lat,
-      fixedLocation.lng
-    );
-    return distance <= zoneRadius;
-  }, [fixedLocation, zoneRadius, calculateDistance]);
-
-  // Marker icon
-  const positionMarkerIcon = useMemo(() => {
-    if (!window.google || !window.google.maps) return null;
-    return {
-      url: isInZone 
-        ? 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
-        : 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-      scaledSize: new window.google.maps.Size(32, 32),
-      anchor: new window.google.maps.Point(16, 32)
-    };
-  }, [isInZone]);
-
-  // Real-time location tracking
+  // Device orientation fallback for heading
   useEffect(() => {
-    if (!isLoaded) return;
-
-    let watchId = null;
-
-    const successCallback = (position) => {
-      const latlng = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-        accuracy: position.coords.accuracy
-      };
-
-      const insideZone = checkZoneStatus(latlng);
-      setIsInZone(insideZone);
-      setCurrentPosition(latlng);
-      setLivePosition({ ...latlng, isInZone: insideZone });
-
-      if (map) {
-        map.panTo(latlng);
+    const handleOrientation = (event) => {
+      if (event.absolute && event.alpha !== null) {
+        const heading = 360 - event.alpha;
+        setUserHeading(Math.round(heading));
       }
     };
 
-    const errorCallback = (error) => {
-      console.error('Error getting location:', error.message);
+    if (window.DeviceOrientationEvent) {
+      window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+      window.addEventListener('deviceorientation', handleOrientation, true);
+    }
+
+    return () => {
+      window.removeEventListener('deviceorientationabsolute', handleOrientation);
+      window.removeEventListener('deviceorientation', handleOrientation);
+    };
+  }, [setUserHeading]);
+
+  const calculateDistance = useCallback((origin, destination) => {
+    if (!window.google || !window.google.maps || !origin || !destination) return 0;
+
+    const originLatLng = new window.google.maps.LatLng(origin.lat, origin.lng);
+    const destinationLatLng = new window.google.maps.LatLng(destination.lat, destination.lng);
+
+    return window.google.maps.geometry.spherical.computeDistanceBetween(originLatLng, destinationLatLng);
+  }, []);
+
+  const onLoad = useCallback((mapInstance) => {
+    setMap(mapInstance);
+    const bounds = new window.google.maps.LatLngBounds();
+    bounds.extend(new window.google.maps.LatLng(mapCenter.lat, mapCenter.lng));
+    mapInstance.fitBounds(bounds);
+    mapInstance.setZoom(18);
+  }, [mapCenter]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    let watchId;
+
+    const handlePositionUpdate = (position) => {
+      const newPos = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+        accuracy: position.coords.accuracy || 9999,
+        heading: position.coords.heading,
+      };
+
+      console.log('GPS Heading:', position);
+      if (newPos.heading !== null) {
+        setUserHeading(Math.round(newPos.heading));
+      }
+
+      const accuracyThreshold = 100;
+
+      if (newPos.accuracy > accuracyThreshold) {
+        setPositionValid(false);
+        return;
+      }
+
+      const distance = calculateDistance(newPos, mapCenter);
+      const insideZone = distance <= zoneRadius;
+
+      const distanceMoved = currentPosition
+        ? calculateDistance(currentPosition, newPos)
+        : Number.POSITIVE_INFINITY;
+
+      if (distanceMoved > 2) {
+        setCurrentPosition(newPos);
+        setPositionValid(true);
+        setIsInZone(insideZone);
+        setLivePosition({
+          ...newPos,
+          isInZone: insideZone,
+          distance,
+        });
+
+        if (map) {
+          map.panTo(newPos);
+        }
+
+        if (insideZone && !isClockIn) {
+          setIsClockIn(true);
+          setClockInTime(new Date());
+        }
+
+        if (!insideZone && isClockIn) {
+          setIsClockIn(false);
+          setClockOutTime(new Date());
+        }
+      }
     };
 
-    // Use watchPosition instead of getCurrentPosition for continuous updates
     if (navigator.geolocation) {
       watchId = navigator.geolocation.watchPosition(
-        successCallback,
-        errorCallback,
-        { 
+        handlePositionUpdate,
+        (err) => {
+          console.error('Geolocation error:', err);
+          setPositionValid(false);
+        },
+        {
           enableHighAccuracy: true,
+          timeout: 5000,
           maximumAge: 0,
-          timeout: 5000
         }
       );
     }
@@ -204,94 +142,90 @@ const GPSMap = ({ setLivePosition, direction, zoneRadius = 5, mapCenter }) => {
     return () => {
       if (watchId) navigator.geolocation.clearWatch(watchId);
     };
-  }, [isLoaded, map, setLivePosition, checkZoneStatus]);
-
-  const onLoad = useCallback((map) => {
-    setMap(map);
-    // Set initial view to include both fixed location and current position
-    if (currentPosition) {
-      const bounds = new window.google.maps.LatLngBounds();
-      bounds.extend(new window.google.maps.LatLng(fixedLocation.lat, fixedLocation.lng));
-      bounds.extend(new window.google.maps.LatLng(currentPosition.lat, currentPosition.lng));
-      map.fitBounds(bounds);
-    }
-  }, [currentPosition, fixedLocation]);
+  }, [
+    isLoaded,
+    map,
+    mapCenter,
+    zoneRadius,
+    calculateDistance,
+    currentPosition,
+    setIsInZone,
+    setLivePosition,
+    isClockIn,
+    setIsClockIn,
+    setClockInTime,
+    setClockOutTime,
+    setUserHeading,
+  ]);
 
   if (loadError) return <div className="p-4 text-red-600">Error loading map</div>;
   if (!isLoaded) return <div className="p-4">Loading map...</div>;
+  if (!positionValid) return <div className="w-full h-[400px] flex items-center justify-center">Response is updating...</div>;
+
+  const markerIcon = {
+    path: window.google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+    fillColor: isInZone ? '#0F9D58' : '#EA4335',
+    fillOpacity: 1,
+    scale: 5,
+    rotation: userHeading ?? 0,
+    strokeColor: '#000',
+    strokeWeight: 1,
+    anchor: new window.google.maps.Point(0, 2),
+  };
+
+  const distance = currentPosition ? Math.round(calculateDistance(currentPosition, mapCenter)) : null;
 
   return (
-    <div className="w-full h-full rounded-lg overflow-hidden shadow-md relative">
+    <div className="w-full h-full rounded-lg overflow-hidden relative">
       <GoogleMap
         mapContainerStyle={containerStyle}
         center={mapCenter}
-        zoom={19}
         onLoad={onLoad}
         options={{
-          streetViewControl: false,
+          streetViewControl: true,
           mapTypeControl: false,
           fullscreenControl: false,
           zoomControl: true,
           gestureHandling: 'greedy',
-          disableDefaultUI: true
         }}
       >
-        {/* Fixed location marker (blue) */}
         <Marker
-          position={fixedLocation}
+          position={mapCenter}
           icon={{
-            url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+            url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
             scaledSize: new window.google.maps.Size(32, 32),
-            anchor: new window.google.maps.Point(16, 32)
+            anchor: new window.google.maps.Point(16, 32),
           }}
+          zIndex={2}
         />
 
-        {/* Zone radius circle - ALWAYS VISIBLE */}
         <Circle
-          center={fixedLocation}
+          center={mapCenter}
           radius={zoneRadius}
           options={{
-            strokeColor: '#4285F4',
+            strokeColor: '#0F9D58',
             strokeOpacity: 0.8,
             strokeWeight: 2,
-            fillColor: isInZone ? '#0F9D58' : '#DB4437',
+            fillColor: '#0F9D58',
             fillOpacity: 0.2,
             clickable: false,
-            zIndex: 1
+            zIndex: 1,
           }}
         />
 
-        {/* Current position marker (red/green) */}
-        {currentPosition && positionMarkerIcon && (
-          <Marker
-            position={currentPosition}
-            icon={{
-              ...positionMarkerIcon,
-              rotation: direction || 0
-            }}
-            onClick={() => setShowInfoWindow(true)}
-          >
-            {showInfoWindow && (
-              <InfoWindow onCloseClick={() => setShowInfoWindow(false)}>
-                <div>
-                  <p className="font-semibold">Your Location</p>
-                  <p>Lat: {currentPosition.lat.toFixed(6)}</p>
-                  <p>Lng: {currentPosition.lng.toFixed(6)}</p>
-                  <p>Accuracy: ±{currentPosition.accuracy?.toFixed(0)}m</p>
-                  <p className={isInZone ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
-                    {isInZone ? 'Inside the zone' : 'Outside the zone'}
-                  </p>
-                </div>
-              </InfoWindow>
-            )}
-          </Marker>
-        )}
+        {currentPosition && <Marker position={currentPosition} icon={markerIcon} zIndex={3} />}
       </GoogleMap>
 
-      {/* Zone status indicator */}
-      <div className={`absolute top-4 right-4 p-3 rounded-lg shadow-md ${isInZone ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-        <p className="font-bold">{isInZone ? 'INSIDE ZONE' : 'OUTSIDE ZONE'}</p>
-        <p className="text-sm">Radius: {zoneRadius}m</p>
+      <div
+        className={`absolute bottom-4 left-4 p-3 rounded-lg shadow-md ${isInZone ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+      >
+        <p className="font-bold">{isInZone ? 'INSIDE OFFICE ZONE' : 'OUTSIDE OFFICE ZONE'}</p>
+        <p className="text-sm">Zone Radius: {zoneRadius}m</p>
+        {distance !== null && (
+          <p className="text-sm">
+            Distance: {distance}m • Heading: {userHeading ?? 'N/A'}°
+          </p>
+        )}
       </div>
     </div>
   );

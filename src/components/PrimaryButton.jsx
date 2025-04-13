@@ -13,7 +13,7 @@ const PrimaryButton = ({
             type={type}
             onClick={onClick}
             disabled={disabled}
-            className={`w-full bg-blue-900 text-white py-3 px-6 rounded-lg text-lg font-medium hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-4 ${className}`}
+            className={`w-full bg-blue-900 text-white cursor-pointer py-3 px-6 rounded-lg text-lg font-medium hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed mt-4 ${className}`}
         >
             {icon ? icon : null}
             {text}

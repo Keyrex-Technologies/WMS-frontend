@@ -2,17 +2,38 @@ import React, { useEffect, useRef } from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
 import * as Yup from 'yup';
 import { Utensils, Lock } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PrimaryButton from '../../components/PrimaryButton';
+import { toast } from 'react-toastify';
+import { forgotPassword } from '../../utils/auth';
 
 function ForgotPassword() {
     const canvasRef = useRef(null);
+    const navigate = useNavigate();
 
     const validationSchema = Yup.object({
         email: Yup.string()
             .email('Invalid email address')
             .required('Email is required'),
     });
+
+    const handleSubmit = async (values, { setSubmitting }) => {
+        try {
+            const response = await forgotPassword(values);
+            if (response.status) {
+                toast.success(response.data?.message);
+                navigate("/verify-otp", {
+                    state: { email: values.email, type: "reset-pass-otp" },
+                });
+            }
+        } catch (e) {
+            toast.error(e.response?.data?.message || e.response?.data?.error || "Something went wrong!");
+        }
+        finally {
+            setSubmitting(false);
+        }
+
+    }
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -129,13 +150,7 @@ function ForgotPassword() {
                             email: '',
                         }}
                         validationSchema={validationSchema}
-                        onSubmit={(values, { setSubmitting }) => {
-                            console.log(values);
-                            setTimeout(() => {
-                                alert('Reset link sent!');
-                                setSubmitting(false);
-                            }, 500);
-                        }}
+                        onSubmit={handleSubmit}
                     >
                         {({ isSubmitting }) => (
                             <Form className="space-y-6">
@@ -159,7 +174,7 @@ function ForgotPassword() {
                                 <PrimaryButton
                                     type="submit"
                                     disabled={isSubmitting}
-                                    text={isSubmitting ? 'Sending Reset Link...' : 'Send Reset Link'}
+                                    text={isSubmitting ? 'Sending Reset OTP...' : 'Send Reset OTP'}
                                 />
                             </Form>
                         )}
