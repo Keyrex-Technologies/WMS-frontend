@@ -35,9 +35,9 @@ function SignUp() {
     employeeId: Yup.string()
       .required('Employee ID is required')
       .min(4, 'Employee ID must be at least 4 characters'),
-    cnic: Yup.string()
-      .matches(/^\d{13}$/, 'CNIC must be exactly 13 digits')
-      .required('CNIC is required'),
+      cnic: Yup.string()
+      .matches(/^\d{5}-\d{7}-\d{1}$/, 'CNIC must be in format 12345-1234567-1')
+      .required('CNIC is required'),    
     password: Yup.string()
       .required('Password is required')
       .min(8, 'Password must be at least 8 characters')

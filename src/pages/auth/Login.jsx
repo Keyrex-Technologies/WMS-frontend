@@ -13,7 +13,6 @@ function Login() {
     const navigate = useNavigate();
     const [showPassword, setShowPassword] = useState(false);
 
-
     const togglePasswordVisibility = () => {
         setShowPassword(prev => !prev);
     };
@@ -37,7 +36,16 @@ function Login() {
                 toast.success(response.data?.message);
                 Cookies.set('token', response.data?.token);
                 Cookies.set('user', JSON.stringify(response.data?.user));
-                navigate('/user')
+                if (response.data?.user.role) {
+                    if (response.data?.user.role === "employee") {
+                        navigate('/user')
+                    } else {
+                        navigate(`/${response.data?.user.role}`);
+                    }
+                } else{
+                    toast.error("User role not found!");
+
+                }
             }
         } catch (e) {
             toast.error(e.response?.data?.message || e.response?.data?.error || "Something went wrong!");

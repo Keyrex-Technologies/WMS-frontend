@@ -9,6 +9,8 @@ const DashboardLayout = ({ userRole }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const token = Cookies.get("token");
+    const user = Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null;
+    const restrictedPaths = ["admin", "manager", "user"];
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
@@ -22,15 +24,25 @@ const DashboardLayout = ({ userRole }) => {
 
     useEffect(() => {
         const checkAuthStatus = () => {
-            if (!token) {
+            const currentPath = location.pathname.split("/")[1];
+            const isRestricted = restrictedPaths.includes(currentPath);
+    
+            if (!token && isRestricted) {
                 navigate('/')
+            } else if (user?.role === "admin" && currentPath !== "admin") {
+                navigate("/admin");
+            } else if (user?.role === "manager" && currentPath !== "manager") {
+                navigate(`/manager`);
+            } else if (user?.role === "employee" && currentPath !== "user") {
+                navigate("/user");
             } else {
                 setLoading(false);
             }
         };
-
+    
+        setLoading(true);
         checkAuthStatus();
-    }, [location.pathname, token]);
+    }, [token, location.pathname]);
 
     if (loading) return <Loader />;
 

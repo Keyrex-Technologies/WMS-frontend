@@ -1,8 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiFilter, FiDownload, FiCalendar, FiUser, FiRefreshCw } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiDownload, FiCalendar, FiRefreshCw } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, isWithinInterval, parseISO } from 'date-fns';
+import { getAllAttendance } from '../../utils/attendance';
+
+const bubbles = [
+  "bg-blue-100 text-blue-600",
+  "bg-purple-100 text-purple-600",
+  "bg-red-100 text-red-600",
+  "bg-green-100 text-green-600",
+  "bg-yellow-100 text-yellow-600"
+]
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+  exit: { opacity: 0, x: -50, transition: { duration: 0.3, ease: "easeIn" } }
+};
+
+const StatusBadge = ({ status }) => {
+  const statusStyles = {
+    'On-Time': 'bg-green-100 text-green-800',
+    Absent: 'bg-red-100 text-red-800',
+    Late: 'bg-yellow-100 text-yellow-800',
+    'Half Day': 'bg-blue-100 text-blue-800'
+  };
+
+  return (
+    <motion.span
+      whileHover={{ scale: 1.05 }}
+      className={`px-2 py-1 text-xs font-medium rounded-full ${statusStyles[status] || 'bg-gray-100 text-gray-800'}`}
+    >
+      {status === "On-Time" ? "On Time" : status}
+    </motion.span>
+  );
+};
+
 const AttendanceManagement = () => {
+  const [allAttendance, setAllAttendance] = useState([]);
   const [timePeriod, setTimePeriod] = useState('');
   const [dateRange, setDateRange] = useState({
     start: '',
@@ -11,73 +46,10 @@ const AttendanceManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
-  const [isExporting, setIsExporting] = useState(false);
+  // const [isExporting, setIsExporting] = useState(false);
   const recordsPerPage = 10;
 
-  const attendanceData = [
-    {
-      id: 1,
-      emp_id: 'EMP001',
-      employee: 'John Doe',
-      date: '2023-05-15',
-      checkIn: '08:45 AM',
-      checkOut: '05:30 PM',
-      status: 'Present',
-      hoursWorked: '8.75',
-      location: 'Restaurant',
-      avatarColor: 'bg-blue-100 text-blue-600'
-    },
-    {
-      id: 2,
-      emp_id: 'EMP002',
-      employee: 'Jane Smith',
-      date: '2023-05-16',
-      checkIn: '09:15 AM',
-      checkOut: '06:00 PM',
-      status: 'Present',
-      hoursWorked: '8.75',
-      location: 'Restaurant',
-      avatarColor: 'bg-purple-100 text-purple-600'
-    },
-    {
-      id: 3,
-      emp_id: 'EMP003',
-      employee: 'Alex Johnson',
-      date: '2023-05-17',
-      checkIn: '--',
-      checkOut: '--',
-      status: 'Absent',
-      hoursWorked: '0',
-      location: '--',
-      avatarColor: 'bg-red-100 text-red-600'
-    },
-    {
-      id: 4,
-      emp_id: 'EMP004',
-      employee: 'Sarah Williams',
-      date: '2023-05-18',
-      checkIn: '08:50 AM',
-      checkOut: '05:45 PM',
-      status: 'Present',
-      hoursWorked: '8.92',
-      location: 'Restaurant',
-      avatarColor: 'bg-green-100 text-green-600'
-    },
-    {
-      id: 5,
-      emp_id: 'EMP005',
-      employee: 'Michael Brown',
-      date: '2023-05-19',
-      checkIn: '10:00 AM',
-      checkOut: '04:30 PM',
-      status: 'Late',
-      hoursWorked: '6.5',
-      location: 'Restaurant',
-      avatarColor: 'bg-yellow-100 text-yellow-600'
-    },
-  ];
-
-  const filteredAttendance = attendanceData.filter(record => {
+  const filteredAttendance = allAttendance.filter(record => {
     const matchesSearch = record.employee.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'All' ? true : record.status === statusFilter;
     let matchesDate = true;
@@ -102,6 +74,49 @@ const AttendanceManagement = () => {
     setCurrentPage(1);
   };
 
+  // Handle export with loading state
+  // const handleExport = () => {
+  //   setIsExporting(true);
+  //   setTimeout(() => {
+  //     setIsExporting(false);
+  //     // In a real app, this would trigger a download
+  //     console.log('Exporting filtered data:', filteredAttendance);
+  //     alert('Export functionality would download the data in CSV format');
+  //   }, 1500);
+  // };
+
+  const getRandomColor = () => {
+    return bubbles[Math.floor(Math.random() * bubbles.length)];
+  };
+
+  const fetchAllAttendance = async () => {
+    const response = await getAllAttendance()
+    if (response.status) {
+      console.log(response.data.attendance)
+      setAllAttendance(response.data.attendance.map(item => {
+        return {
+          emp_id: item.employeeId,
+          employee: 'Michael Brown',
+          date: new Date(item.timestamp).toISOString().split("T")[0],
+          checkIn: '10:00 AM',
+          checkOut: '04:30 PM',
+          status: 'On-Time',
+          hoursWorked: '6.5',
+          avatarColor: getRandomColor()
+        }
+      }))
+    }
+  }
+
+  const indexOfLastRecord = currentPage * recordsPerPage;
+  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
+  const currentRecords = filteredAttendance.slice(indexOfFirstRecord, indexOfLastRecord);
+  const totalPages = Math.ceil(filteredAttendance.length / recordsPerPage);
+
+  useEffect(() => {
+    fetchAllAttendance()
+  }, [])
+
   useEffect(() => {
     if (timePeriod === 'weekly') {
       const start = format(new Date(new Date().setDate(new Date().getDate() - 7)), 'yyyy-MM-dd');
@@ -112,53 +127,9 @@ const AttendanceManagement = () => {
       const end = format(new Date(), 'yyyy-MM-dd');
       setDateRange({ start, end });
     } else if (timePeriod === '') {
-      // Clear date range when no time period is selected
       setDateRange({ start: '', end: '' });
     }
   }, [timePeriod]);
-
-  // Pagination logic
-  const indexOfLastRecord = currentPage * recordsPerPage;
-  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = filteredAttendance.slice(indexOfFirstRecord, indexOfLastRecord);
-  const totalPages = Math.ceil(filteredAttendance.length / recordsPerPage);
-
-  // Handle export with loading state
-  const handleExport = () => {
-    setIsExporting(true);
-    setTimeout(() => {
-      setIsExporting(false);
-      // In a real app, this would trigger a download
-      console.log('Exporting filtered data:', filteredAttendance);
-      alert('Export functionality would download the data in CSV format');
-    }, 1500);
-  };
-
-  // Status badge component
-  const StatusBadge = ({ status }) => {
-    const statusStyles = {
-      Present: 'bg-green-100 text-green-800',
-      Absent: 'bg-red-100 text-red-800',
-      Late: 'bg-yellow-100 text-yellow-800',
-      'Half Day': 'bg-blue-100 text-blue-800'
-    };
-
-    return (
-      <motion.span
-        whileHover={{ scale: 1.05 }}
-        className={`px-2 py-1 text-xs font-medium rounded-full ${statusStyles[status] || 'bg-gray-100 text-gray-800'}`}
-      >
-        {status}
-      </motion.span>
-    );
-  };
-
-  // Animation variants
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
-    exit: { opacity: 0, x: -50, transition: { duration: 0.3, ease: "easeIn" } }
-  };
 
   return (
     <motion.div
@@ -289,7 +260,7 @@ const AttendanceManagement = () => {
             </motion.button>
 
             {/* Export Button */}
-            <motion.button
+            {/* <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleExport}
@@ -300,7 +271,7 @@ const AttendanceManagement = () => {
             >
               <FiDownload />
               {isExporting ? 'Exporting...' : 'Export Report'}
-            </motion.button>
+            </motion.button> */}
           </div>
         </motion.div>
 
@@ -324,6 +295,7 @@ const AttendanceManagement = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
                 </tr>
               </thead>
+
               <tbody className="bg-white divide-y divide-gray-200">
                 <AnimatePresence>
                   {currentRecords.length > 0 ? (

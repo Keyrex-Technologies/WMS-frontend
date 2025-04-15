@@ -6,7 +6,6 @@ import Loader from "../components/Loader";
 const AuthLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const token = Cookies.get("token");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,23 +14,32 @@ const AuthLayout = () => {
 
   useEffect(() => {
     const checkAuthStatus = () => {
-      if (token) {
-        const user = JSON.parse(Cookies.get("user"));
-        navigate(`/user`)
+      const token = Cookies.get("token");
+      const user = Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null;
+
+      if (token && user) {
+        // Redirect logged-in users away from auth pages
+        if (user.role === "admin") {
+          navigate("/admin");
+        } else if (user.role === "manager") {
+          navigate("/manager");
+        } else {
+          navigate("/user");
+        }
       } else {
+        // Allow unauthenticated users to access auth pages
         setLoading(false);
       }
     };
 
     checkAuthStatus();
-  }, [location.pathname, token]);
+  }, [location.pathname]);
 
   if (loading) return <Loader />;
 
   return (
-    <div className={`w-full flex flex-col items-center overflow-hidden `}>
-      {/* max-w-[1724px] */}
-      <div className={` w-full relative`}>
+    <div className="w-full flex flex-col items-center overflow-hidden">
+      <div className="w-full relative">
         <Outlet />
       </div>
     </div>
