@@ -20,18 +20,18 @@ const itemVariants = {
 
 const StatusBadge = ({ status }) => {
   const statusStyles = {
-    'On-Time': 'bg-green-100 text-green-800',
-    Absent: 'bg-red-100 text-red-800',
-    Late: 'bg-yellow-100 text-yellow-800',
-    'Half Day': 'bg-blue-100 text-blue-800'
+    present: 'bg-green-100 text-green-800',
+    absent: 'bg-red-100 text-red-800',
+    late: 'bg-yellow-100 text-yellow-800',
+    'half-day': 'bg-blue-100 text-blue-800'
   };
 
   return (
     <motion.span
       whileHover={{ scale: 1.05 }}
-      className={`px-2 py-1 text-xs font-medium rounded-full ${statusStyles[status] || 'bg-gray-100 text-gray-800'}`}
+      className={`px-2 py-1 text-xs capitalize font-medium rounded-full ${statusStyles[status] || 'bg-gray-100 text-gray-800'}`}
     >
-      {status === "On-Time" ? "On Time" : status}
+      {status}
     </motion.span>
   );
 };
@@ -96,11 +96,12 @@ const AttendanceManagement = () => {
       setAllAttendance(response.data.attendance.map(item => {
         return {
           emp_id: item.employeeId,
-          employee: 'Michael Brown',
+          employee: item.employeeName,
           date: new Date(item.timestamp).toISOString().split("T")[0],
+          role: item.role,
           checkIn: '10:00 AM',
           checkOut: '04:30 PM',
-          status: 'On-Time',
+          status: item.status,
           hoursWorked: '6.5',
           avatarColor: getRandomColor()
         }
@@ -299,9 +300,9 @@ const AttendanceManagement = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 <AnimatePresence>
                   {currentRecords.length > 0 ? (
-                    currentRecords.map((record) => (
+                    currentRecords.map((record, index) => (
                       <motion.tr
-                        key={record.id}
+                        key={index}
                         variants={itemVariants}
                         initial="hidden"
                         animate="visible"

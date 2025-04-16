@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import { MdArrowBack } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
+import { addNewEmployee } from '../../utils/employees';
+import { toast } from 'react-toastify';
+import { Eye, EyeOff } from 'lucide-react';
 
 const AddEmployee = () => {
     const navigate = useNavigate();
-
+    const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         email: '',
+        password: '',
+        employeeId: '',
         cnic: '',
         phone: '',
         wagePerHour: '',
@@ -20,7 +25,6 @@ const AddEmployee = () => {
 
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -39,6 +43,18 @@ const AddEmployee = () => {
         } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
             newErrors.email = 'Email is invalid';
         }
+        if (!formData.password.trim()) {
+            newErrors.password = 'Password is required';
+        } else if (formData.password.length < 8) {
+            newErrors.password = 'Password must be at least 8 characters';
+        } else if (!/[0-9]/.test(formData.password)) {
+            newErrors.password = 'Password must contain at least one number';
+        } else if (!/[a-z]/.test(formData.password)) {
+            newErrors.password = 'Password must contain at least one lowercase letter';
+        } else if (!/[A-Z]/.test(formData.password)) {
+            newErrors.password = 'Password must contain at least one uppercase letter';
+        }
+        if (!formData.employeeId.trim()) newErrors.employeeId = 'EmployeeId is required';
         if (!formData.cnic.trim()) {
             newErrors.cnic = 'CNIC is required';
         } else if (!/^\d{5}-\d{7}-\d{1}$/.test(formData.cnic)) {
@@ -66,32 +82,34 @@ const AddEmployee = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const handleSubmit = async (e) => {
+        try {
+            e.preventDefault();
 
-        if (validateForm()) {
-            setIsSubmitting(true);
+            if (validateForm()) {
+                setIsSubmitting(true);
 
-            // Calculate monthly salary based on the new fields
-            const monthlySalary = calculateMonthlySalary(
-                formData.wagePerHour,
-                formData.dailyWorkingHours,
-                formData.weeklyWorkingDays
-            );
+                const employeeData = {
+                    employeeId: formData.employeeId,
+                    name: formData.name,
+                    status: 'active',
+                    email: formData.email,
+                    password: formData.password,
+                    phoneNumber: formData.phone,
+                    cnic: formData.cnic,
+                    role: formData.role,
+                    wagePerHour: formData.wagePerHour,
+                    weeklyWorkingDays: formData.weeklyWorkingDays,
+                    joiningDate: formData.joiningDate,
+                    address: formData.address,
+                    dailyWorkingHours: formData.dailyWorkingHours,
+                };
 
-            const employeeData = {
-                ...formData,
-                monthlySalary // Adding calculated monthly salary to the form data
-            };
-
-            // Simulate API call
-            setTimeout(() => {
-                console.log('Employee added:', employeeData);
-                setIsSubmitting(false);
-                setSuccessMessage('Employee added successfully!');
-                
-                // Reset form after 2 seconds
-                setTimeout(() => {
+                const response = await addNewEmployee(employeeData);
+                if (response.status) {
+                    console.log(response.data.message)
+                    setIsSubmitting(false);
+                    toast.success(response.data.message);
                     setFormData({
                         name: '',
                         email: '',
@@ -105,18 +123,27 @@ const AddEmployee = () => {
                         address: ''
                     });
                     navigate(-1);
-                    setSuccessMessage('');
-                }, 2000);
-            }, 1500);
+                }
+            }
+        } catch (e) {
+            toast.error(e.response?.data?.message || e.response?.data?.error || "Something went wrong!");
+        }
+        finally {
+            setIsSubmitting(false);
         }
     };
 
-    // Helper function to calculate monthly salary
-    const calculateMonthlySalary = (wagePerHour, dailyHours, weeklyDays) => {
-        const weeklyHours = dailyHours * weeklyDays;
-        const monthlyHours = weeklyHours * 4; // Approximate 4 weeks in a month
-        return wagePerHour * monthlyHours;
-    };
+    // const monthlySalary = calculateMonthlySalary(
+    //     formData.wagePerHour,
+    //     formData.dailyWorkingHours,
+    //     formData.weeklyWorkingDays
+    // );
+
+    // const calculateMonthlySalary = (wagePerHour, dailyHours, weeklyDays) => {
+    //     const weeklyHours = dailyHours * weeklyDays;
+    //     const monthlyHours = weeklyHours * 4;
+    //     return wagePerHour * monthlyHours;
+    // };
 
     return (
         <div className="w-full px-6">
@@ -130,13 +157,6 @@ const AddEmployee = () => {
                         Fill in the details to add a new employee to the system.
                     </p>
                 </div>
-
-                {/* Success Message */}
-                {successMessage && (
-                    <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-lg">
-                        {successMessage}
-                    </div>
-                )}
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="py-7">
@@ -159,6 +179,24 @@ const AddEmployee = () => {
                             {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
                         </div>
 
+                        {/* Employee Id */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="employeeId">
+                                Employee Id <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="employeeId"
+                                name="employeeId"
+                                value={formData.employeeId}
+                                onChange={handleChange}
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.employeeId ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                placeholder="EMP-001"
+                            />
+                            {errors.employeeId && <p className="mt-1 text-sm text-red-500">{errors.employeeId}</p>}
+                        </div>
+
                         {/* Email */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
@@ -175,6 +213,34 @@ const AddEmployee = () => {
                                 placeholder="john@example.com"
                             />
                             {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+                        </div>
+
+                        {/* Password */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="password">
+                                Password <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    id="password"
+                                    name="password"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.password ? 'border-red-500' : 'border-gray-300'
+                                        }`}
+                                    placeholder="******"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(prev => !prev)}
+                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
+                                >
+                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+
+                            {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password}</p>}
                         </div>
 
                         {/* CNIC */}
@@ -285,8 +351,8 @@ const AddEmployee = () => {
                                 onChange={handleChange}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option value="Employee">Employee</option>
-                                <option value="Manager">Manager</option>
+                                <option value="employee">Employee</option>
+                                <option value="manager">Manager</option>
                             </select>
                         </div>
 
@@ -329,14 +395,14 @@ const AddEmployee = () => {
                         <button
                             type="button"
                             onClick={() => navigate(-1)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                            className="px-4 py-2 border border-gray-300 cursor-pointer rounded-lg text-gray-700 bg-white hover:bg-gray-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className={`px-4 py-2 rounded-lg text-white ${isSubmitting ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
+                            className={`px-4 py-2 rounded-lg cursor-pointer text-white ${isSubmitting ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
                                 }`}
                         >
                             {isSubmitting ? 'Adding...' : 'Add Employee'}

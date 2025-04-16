@@ -44,10 +44,11 @@ const AdminHome = () => {
 
   const fetchTodaysAttendance = async () => {
     const response = await getTodaysAttendance();
-    if (response.status) {
-      setTodaysAttendance(response.data)
+    if (response.status && Array.isArray(response.data?.records)) {
+      setTodaysAttendance(response.data.records);
     }
-  }
+  };
+  
 
   useEffect(() => {
     fetchStats();
@@ -59,7 +60,7 @@ const AdminHome = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="w-full sm:px-6 space-y-8"
+      className="w-full sm:px-6 space-y-8 mb-10"
     >
       {/* Quick Stats */}
       <motion.div
@@ -138,6 +139,7 @@ const AdminHome = () => {
           >
             <thead className="bg-gray-50">
               <motion.tr variants={item}>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emp_id</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock In</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock Out</th>
@@ -148,13 +150,18 @@ const AdminHome = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               <AnimatePresence>
                 {todaysAttendance.length > 0 ? (
-                  todaysAttendance?.map((emp) => (
+                  todaysAttendance?.map((emp, index) => (
                     <motion.tr
-                      key={emp.employeeId}
-                      variants={item}
+                      key={index}
                       whileHover={{ backgroundColor: "rgba(0, 0, 0, 0.02)" }}
                       className="hover:bg-gray-50"
                     >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          <span className="text-gray-400">{emp.employeeId}</span>
+                        </div>
+                      </td>
+
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">

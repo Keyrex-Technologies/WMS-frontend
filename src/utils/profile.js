@@ -26,7 +26,7 @@ export const addNewEmployee = async (data) => {
 
 export const getAllEmployees = async () => {
   try {
-    const response = await axios.get(`${backendUrl}/admin/get-all-employees`, {
+    const response = await axios.get(`${backendUrl}/admin/employees`, {
       cancelToken: source.token,
     });
     return response;
@@ -57,11 +57,10 @@ export const getEmployeeRecord = async (emp_id) => {
   }
 };
 
-export const updateEmployeeRecord = async (emp_id, data) => {
+export const updateEmployeeRecord = async (emp_id) => {
   try {
     const response = await axios.put(
       `${backendUrl}/admin/employees/${emp_id}`,
-      data,
       {
         cancelToken: source.token,
       }

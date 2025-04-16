@@ -1,49 +1,20 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { getAllEmployees } from "../../utils/employees";
 
 const EmployeeManagement = () => {
     const navigate = useNavigate();
-    const [employees, setEmployees] = useState([
-        {
-            id: 1,
-            employeeId: 'EMP-001',
-            name: "John Doe",
-            email: "john@example.com",
-            role: "Employee",
-            status: "Active",
-            lastActive: "Today",
-        },
-        {
-            id: 2,
-            employeeId: 'EMP-002',
-            name: "Jane Smith",
-            email: "jane@example.com",
-            role: "Manager",
-            status: "Active",
-            lastActive: "Yesterday",
-        },
-        {
-            id: 3,
-            employeeId: 'EMP-003',
-            name: "Alex Johnson",
-            email: "alex@example.com",
-            role: "Employee",
-            status: "Inactive",
-            lastActive: "2 days ago",
-        },
-    ]);
+    const [employees, setEmployees] = useState([]);
 
     const [searchTerm, setSearchTerm] = useState("");
     const [deletingId, setDeletingId] = useState(null);
 
-    // Filter employees based on search
     const filteredEmployees = employees.filter((emp) =>
         emp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Handle employee deletion with animation
     const handleDelete = (id) => {
         setDeletingId(id);
         setTimeout(() => {
@@ -52,27 +23,15 @@ const EmployeeManagement = () => {
         }, 300);
     };
 
-    // Handle employee status toggle (Active / Inactive)
-    const handleStatusToggle = (id) => {
-        setEmployees((prevEmployees) =>
-            prevEmployees.map((emp) =>
-                emp.id === id
-                    ? { ...emp, status: emp.status === "Active" ? "Inactive" : "Active" }
-                    : emp
-            )
-        );
-    };
-
-    // Animation variants
-    const containerVariants = {
-        hidden: { opacity: 0 },
-        visible: {
-            opacity: 1,
-            transition: {
-                staggerChildren: 0.1
-            }
-        }
-    };
+    // const handleStatusToggle = (id) => {
+    //     setEmployees((prevEmployees) =>
+    //         prevEmployees.map((emp) =>
+    //             emp.id === id
+    //                 ? { ...emp, status: emp.status === "Active" ? "Inactive" : "Active" }
+    //                 : emp
+    //         )
+    //     );
+    // };
 
     const itemVariants = {
         hidden: { opacity: 0, y: 20 },
@@ -91,6 +50,18 @@ const EmployeeManagement = () => {
             }
         }
     };
+
+    useEffect(() => {
+        const fetchAllEmployees = async () => {
+            const response = await getAllEmployees();
+            if (response.status) {
+                console.log(response.data)
+                setEmployees(response.data);
+            }
+        }
+
+        fetchAllEmployees()
+    }, [])
 
     return (
         <motion.div
@@ -144,7 +115,7 @@ const EmployeeManagement = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => navigate("/admin/add-employee")}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow whitespace-nowrap"
+                    className="bg-blue-600 hover:bg-blue-700 cursor-pointer text-white px-4 py-2 rounded-lg shadow whitespace-nowrap"
                 >
                     + Add Employee
                 </motion.button>
@@ -172,13 +143,14 @@ const EmployeeManagement = () => {
                                     Status
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Last Active
+                                    Wage per Hour
                                 </th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Actions
                                 </th>
                             </tr>
                         </thead>
+
                         <tbody className="bg-white divide-y divide-gray-200">
                             <AnimatePresence>
                                 {filteredEmployees.map((employee) => (
@@ -194,6 +166,7 @@ const EmployeeManagement = () => {
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {employee.employeeId}
                                         </td>
+
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
                                                 <motion.div
@@ -211,24 +184,28 @@ const EmployeeManagement = () => {
                                                 </div>
                                             </div>
                                         </td>
+
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {employee.email}
                                         </td>
+
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <motion.span
                                                 whileHover={{ scale: 1.05 }}
-                                                className={`px-2 py-1 text-xs rounded-full ${employee.role === "Manager"
+                                                className={`px-2 py-1 text-xs rounded-full capitalize ${employee.role === "employee"
                                                     ? "bg-purple-100 text-purple-800"
-                                                    : "bg-green-100 text-green-800"
+                                                    : employee.role === "manager" ?
+                                                        "bg-green-100 text-green-800" : "bg-red-100 text-red-500"
                                                     }`}
                                             >
                                                 {employee.role}
                                             </motion.span>
                                         </td>
+
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <motion.span
                                                 whileHover={{ scale: 1.05 }}
-                                                className={`px-2 py-1 text-xs rounded-full ${employee.status === "Active"
+                                                className={`px-2 py-1 text-xs rounded-full capitalize ${employee.status === "active"
                                                     ? "bg-green-100 text-green-800"
                                                     : "bg-red-100 text-red-800"
                                                     }`}
@@ -236,38 +213,49 @@ const EmployeeManagement = () => {
                                                 {employee.status}
                                             </motion.span>
                                         </td>
+
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {employee.lastActive}
+                                            {employee.wagePerHour}
                                         </td>
-                                        <td className="px-6 py-4 flex items-center text-sm font-medium gap-5">
-                                            <motion.button
-                                                whileHover={{ scale: 1.1 }}
-                                                whileTap={{ scale: 0.9 }}
-                                                className="text-blue-600 hover:text-blue-900"
-                                                onClick={() => navigate(`/admin/update-employee/${employee.id}`)}
-                                            >
-                                                Edit
-                                            </motion.button>
-                                            <motion.button
-                                                whileHover={{ scale: 1.1 }}
-                                                whileTap={{ scale: 0.9 }}
-                                                className="text-red-600 hover:text-red-900"
-                                                onClick={() => handleDelete(employee.id)}
-                                            >
-                                                Delete
-                                            </motion.button>
-                                            <motion.button
-                                                whileHover={{ scale: 1.05 }}
-                                                whileTap={{ scale: 0.95 }}
-                                                className={`text-sm px-3 py-1 rounded-lg ${employee.status === "Active"
-                                                    ? "bg-gray-300 text-gray-700"
-                                                    : "bg-green-600 text-white"
-                                                    }`}
-                                                onClick={() => handleStatusToggle(employee.id)}
-                                            >
-                                                {employee.status === "Active" ? "Deactivate" : "Activate"}
-                                            </motion.button>
+
+                                        <td className="px-6 py-4 text-sm font-medium">
+                                            <div className="flex items-center gap-3">
+                                                <motion.button
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                    className={`px-4 py-1.5 min-w-[120px] cursor-pointer rounded-lg font-medium shadow-sm transition-colors duration-200 
+                                                            ${employee.status === 'inactive'
+                                                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                                                            : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}`}
+                                                    onClick={() => navigate(`/admin/update-employee/${employee.employeeId}`)}
+                                                >
+                                                    {employee.status === "inactive" ? 'Approve' : 'Edit'}
+                                                </motion.button>
+
+                                                <motion.button
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
+                                                    className="px-4 py-1.5 rounded-lg cursor-pointer bg-red-100 text-red-700 hover:bg-red-200 font-medium shadow-sm transition-colors duration-200"
+                                                    onClick={() => handleDelete(employee.employeeId)}
+                                                >
+                                                    Delete
+                                                </motion.button>
+
+                                                {/* Optional: Status Toggle Button */}
+                                                {/* <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className={`px-4 py-1.5 rounded-lg font-medium shadow-sm transition-colors duration-200 
+        ${employee.status === 'active'
+          ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+          : 'bg-green-500 text-white hover:bg-green-600'}`}
+      onClick={() => handleStatusToggle(employee.employeeId)}
+    >
+      {employee.status === "active" ? "Deactivate" : "Activate"}
+    </motion.button> */}
+                                            </div>
                                         </td>
+
                                     </motion.tr>
                                 ))}
                             </AnimatePresence>
@@ -286,25 +274,26 @@ const EmployeeManagement = () => {
                 <div className="text-sm text-gray-500">
                     Showing 1 to {filteredEmployees.length} of {employees.length} entries
                 </div>
+                
                 <div className="flex gap-2">
                     <motion.button
                         whileHover={{ y: -2 }}
                         whileTap={{ scale: 0.95 }}
-                        className="px-3 py-1 border rounded-lg bg-white text-gray-700"
+                        className="px-3 py-1 border cursor-pointer rounded-lg bg-white text-gray-700"
                     >
                         Previous
                     </motion.button>
                     <motion.button
                         whileHover={{ y: -2 }}
                         whileTap={{ scale: 0.95 }}
-                        className="px-3 py-1 border rounded-lg bg-blue-600 text-white"
+                        className="px-3 py-1 border cursor-pointer rounded-lg bg-blue-600 text-white"
                     >
                         1
                     </motion.button>
                     <motion.button
                         whileHover={{ y: -2 }}
                         whileTap={{ scale: 0.95 }}
-                        className="px-3 py-1 border rounded-lg bg-white text-gray-700"
+                        className="px-3 py-1 border cursor-pointer rounded-lg bg-white text-gray-700"
                     >
                         Next
                     </motion.button>

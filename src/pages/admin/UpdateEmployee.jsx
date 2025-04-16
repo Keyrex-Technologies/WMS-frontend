@@ -1,51 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { MdArrowBack } from 'react-icons/md';
 import { useNavigate, useParams } from 'react-router-dom';
+import { getEmployeeRecord, updateEmployeeRecord } from '../../utils/employees';
+import { toast } from 'react-toastify';
 
 const UpdateEmployee = () => {
     const navigate = useNavigate();
     const { id } = useParams();
-    const [employeeData, setEmployeeData] = useState({
+    const [formData, setFormData] = useState({
         name: '',
         email: '',
+        employeeId: '',
         cnic: '',
         phone: '',
         wagePerHour: '',
         dailyWorkingHours: '',
         weeklyWorkingDays: '',
         role: 'Employee',
-        joiningDate: '',
         address: ''
     });
     const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [successMessage, setSuccessMessage] = useState('');
-
-    // Fetch employee data using the ID from the URL
-    useEffect(() => {
-        // Simulating API call to fetch employee data
-        setTimeout(() => {
-            // Replace with an actual API call to fetch data
-            const mockEmployeeData = {
-                name: 'John Doe',
-                email: 'john.doe@example.com',
-                cnic: '12345-1234567-1',
-                phone: '03001234567',
-                wagePerHour: '500',
-                dailyWorkingHours: '8',
-                weeklyWorkingDays: '5',
-                role: 'Manager',
-                joiningDate: '2021-01-01',
-                address: '123 Street, City'
-            };
-            setEmployeeData(mockEmployeeData);
-        }, 1000);
-    }, [id]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setEmployeeData({
-            ...employeeData,
+        setFormData({
+            ...formData,
             [name]: value
         });
     };
@@ -53,32 +33,32 @@ const UpdateEmployee = () => {
     const validateForm = () => {
         const newErrors = {};
 
-        if (!employeeData.name.trim()) newErrors.name = 'Name is required';
-        if (!employeeData.email.trim()) {
+        if (!formData.name.trim()) newErrors.name = 'Name is required';
+        if (!formData.email.trim()) {
             newErrors.email = 'Email is required';
-        } else if (!/^\S+@\S+\.\S+$/.test(employeeData.email)) {
+        } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
             newErrors.email = 'Email is invalid';
         }
-        if (!employeeData.cnic.trim()) {
+        if (!formData.employeeId.trim()) newErrors.employeeId = 'EmployeeId is required';
+        if (!formData.cnic.trim()) {
             newErrors.cnic = 'CNIC is required';
-        } else if (!/^\d{5}-\d{7}-\d{1}$/.test(employeeData.cnic)) {
+        } else if (!/^\d{5}-\d{7}-\d{1}$/.test(formData.cnic)) {
             newErrors.cnic = 'CNIC must be in format 12345-1234567-1';
         }
-        if (!employeeData.phone.trim()) {
+        if (!formData.phone.trim()) {
             newErrors.phone = 'Phone is required';
-        } else if (!/^\d{11,15}$/.test(employeeData.phone)) {
+        } else if (!/^\d{11,15}$/.test(formData.phone)) {
             newErrors.phone = 'Phone must be 11-15 digits';
         }
-        if (!employeeData.wagePerHour) newErrors.wagePerHour = 'Wage per hour is required';
-        if (!employeeData.dailyWorkingHours) newErrors.dailyWorkingHours = 'Daily working hours is required';
-        if (!employeeData.weeklyWorkingDays) newErrors.weeklyWorkingDays = 'Weekly working days is required';
-        if (!employeeData.joiningDate) newErrors.joiningDate = 'Joining date is required';
+        if (!formData.wagePerHour) newErrors.wagePerHour = 'Wage per hour is required';
+        if (!formData.dailyWorkingHours) newErrors.dailyWorkingHours = 'Daily working hours is required';
+        if (!formData.weeklyWorkingDays) newErrors.weeklyWorkingDays = 'Weekly working days is required';
 
         // Validate working hours constraints
-        if (employeeData.dailyWorkingHours && (employeeData.dailyWorkingHours < 1 || employeeData.dailyWorkingHours > 24)) {
+        if (formData.dailyWorkingHours && (formData.dailyWorkingHours < 1 || formData.dailyWorkingHours > 24)) {
             newErrors.dailyWorkingHours = 'Must be between 1-24 hours';
         }
-        if (employeeData.weeklyWorkingDays && (employeeData.weeklyWorkingDays < 1 || employeeData.weeklyWorkingDays > 7)) {
+        if (formData.weeklyWorkingDays && (formData.weeklyWorkingDays < 1 || formData.weeklyWorkingDays > 7)) {
             newErrors.weeklyWorkingDays = 'Must be between 1-7 days';
         }
 
@@ -86,45 +66,74 @@ const UpdateEmployee = () => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const handleSubmit = async (e) => {
+        try {
+            e.preventDefault();
 
-        if (validateForm()) {
-            setIsSubmitting(true);
+            if (validateForm()) {
+                setIsSubmitting(true);
 
-            // Calculate monthly salary based on the new fields
-            const monthlySalary = calculateMonthlySalary(
-                employeeData.wagePerHour,
-                employeeData.dailyWorkingHours,
-                employeeData.weeklyWorkingDays
-            );
+                const employeeData = {
+                    employeeId: formData.employeeId,
+                    name: formData.name,
+                    status: 'active',
+                    email: formData.email,
+                    phoneNumber: formData.phone,
+                    cnic: formData.cnic,
+                    role: formData.role,
+                    wagePerHour: formData.wagePerHour,
+                    weeklyWorkingDays: formData.weeklyWorkingDays,
+                    address: formData.address,
+                    dailyWorkingHours: formData.dailyWorkingHours,
+                };
 
-            const updatedEmployeeData = {
-                ...employeeData,
-                monthlySalary // Adding calculated monthly salary to the form data
-            };
-
-            // Simulate API call to update employee
-            setTimeout(() => {
-                console.log('Employee updated:', updatedEmployeeData);
-                setIsSubmitting(false);
-                setSuccessMessage('Employee updated successfully!');
-                
-                // Reset form after 2 seconds
-                setTimeout(() => {
-                    setSuccessMessage('');
+                const response = await updateEmployeeRecord(formData.employeeId, employeeData);
+                if (response.status) {
+                    console.log(response.data.message)
+                    setIsSubmitting(false);
+                    toast.success(response.data.message);
+                    setFormData({
+                        name: '',
+                        email: '',
+                        cnic: '',
+                        phone: '',
+                        wagePerHour: '',
+                        dailyWorkingHours: '',
+                        weeklyWorkingDays: '',
+                        role: 'Employee',
+                        address: ''
+                    });
                     navigate(-1);
-                }, 2000);
-            }, 1500);
+                }
+            }
+        } catch (e) {
+            toast.error(e.response?.data?.message || e.response?.data?.error || "Something went wrong!");
+        }
+        finally {
+            setIsSubmitting(false);
         }
     };
 
-    // Helper function to calculate monthly salary
     const calculateMonthlySalary = (wagePerHour, dailyHours, weeklyDays) => {
         const weeklyHours = dailyHours * weeklyDays;
         const monthlyHours = weeklyHours * 4; // Approximate 4 weeks in a month
         return wagePerHour * monthlyHours;
     };
+
+    useEffect(() => {
+        const fetchEmployeeData = async () => {
+            const response = await getEmployeeRecord(id);
+
+            if (response.status) {
+                setFormData({
+                    ...response.data,
+                    phone: response.data.phoneNumber,
+                })
+            }
+        }
+
+        fetchEmployeeData()
+    }, [id]);
 
     return (
         <div className="w-full px-6">
@@ -136,13 +145,6 @@ const UpdateEmployee = () => {
                     <h1 className="text-3xl font-bold text-gray-800">Update Employee</h1>
                     <p className="text-gray-600 mt-2">Edit the details of the employee.</p>
                 </div>
-
-                {/* Success Message */}
-                {successMessage && (
-                    <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-lg">
-                        {successMessage}
-                    </div>
-                )}
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="py-7">
@@ -156,12 +158,32 @@ const UpdateEmployee = () => {
                                 type="text"
                                 id="name"
                                 name="name"
-                                value={employeeData.name}
+                                value={formData.name}
                                 onChange={handleChange}
-                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.name ? 'border-red-500' : 'border-gray-300'}`}
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.name ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                 placeholder="John Doe"
                             />
                             {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
+                        </div>
+
+                        {/* Employee Id */}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="employeeId">
+                                Employee Id <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="employeeId"
+                                name="employeeId"
+                                disabled
+                                value={formData.employeeId}
+                                onChange={handleChange}
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.employeeId ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                placeholder="EMP-001"
+                            />
+                            {errors.employeeId && <p className="mt-1 text-sm text-red-500">{errors.employeeId}</p>}
                         </div>
 
                         {/* Email */}
@@ -173,9 +195,10 @@ const UpdateEmployee = () => {
                                 type="email"
                                 id="email"
                                 name="email"
-                                value={employeeData.email}
+                                value={formData.email}
                                 onChange={handleChange}
-                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.email ? 'border-red-500' : 'border-gray-300'}`}
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.email ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                 placeholder="john@example.com"
                             />
                             {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
@@ -190,9 +213,10 @@ const UpdateEmployee = () => {
                                 type="text"
                                 id="cnic"
                                 name="cnic"
-                                value={employeeData.cnic}
+                                value={formData.cnic}
                                 onChange={handleChange}
-                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.cnic ? 'border-red-500' : 'border-gray-300'}`}
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.cnic ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                 placeholder="12345-1234567-1"
                             />
                             {errors.cnic && <p className="mt-1 text-sm text-red-500">{errors.cnic}</p>}
@@ -207,9 +231,10 @@ const UpdateEmployee = () => {
                                 type="tel"
                                 id="phone"
                                 name="phone"
-                                value={employeeData.phone}
+                                value={formData.phone}
                                 onChange={handleChange}
-                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.phone ? 'border-red-500' : 'border-gray-300'}`}
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.phone ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                 placeholder="03001234567"
                             />
                             {errors.phone && <p className="mt-1 text-sm text-red-500">{errors.phone}</p>}
@@ -224,9 +249,10 @@ const UpdateEmployee = () => {
                                 type="number"
                                 id="wagePerHour"
                                 name="wagePerHour"
-                                value={employeeData.wagePerHour}
+                                value={formData.wagePerHour}
                                 onChange={handleChange}
-                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.wagePerHour ? 'border-red-500' : 'border-gray-300'}`}
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.wagePerHour ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                 placeholder="500"
                                 min="0"
                                 step="0.01"
@@ -243,9 +269,10 @@ const UpdateEmployee = () => {
                                 type="number"
                                 id="dailyWorkingHours"
                                 name="dailyWorkingHours"
-                                value={employeeData.dailyWorkingHours}
+                                value={formData.dailyWorkingHours}
                                 onChange={handleChange}
-                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.dailyWorkingHours ? 'border-red-500' : 'border-gray-300'}`}
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.dailyWorkingHours ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                 placeholder="8"
                                 min="1"
                                 max="24"
@@ -262,9 +289,10 @@ const UpdateEmployee = () => {
                                 type="number"
                                 id="weeklyWorkingDays"
                                 name="weeklyWorkingDays"
-                                value={employeeData.weeklyWorkingDays}
+                                value={formData.weeklyWorkingDays}
                                 onChange={handleChange}
-                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.weeklyWorkingDays ? 'border-red-500' : 'border-gray-300'}`}
+                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.weeklyWorkingDays ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                 placeholder="5"
                                 min="1"
                                 max="7"
@@ -280,29 +308,13 @@ const UpdateEmployee = () => {
                             <select
                                 id="role"
                                 name="role"
-                                value={employeeData.role}
+                                value={formData.role}
                                 onChange={handleChange}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                                <option value="Employee">Employee</option>
-                                <option value="Manager">Manager</option>
+                                <option value="employee">Employee</option>
+                                <option value="manager">Manager</option>
                             </select>
-                        </div>
-
-                        {/* Joining Date */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="joiningDate">
-                                Joining Date <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="date"
-                                id="joiningDate"
-                                name="joiningDate"
-                                value={employeeData.joiningDate}
-                                onChange={handleChange}
-                                className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.joiningDate ? 'border-red-500' : 'border-gray-300'}`}
-                            />
-                            {errors.joiningDate && <p className="mt-1 text-sm text-red-500">{errors.joiningDate}</p>}
                         </div>
 
                         {/* Address */}
@@ -313,7 +325,7 @@ const UpdateEmployee = () => {
                             <textarea
                                 id="address"
                                 name="address"
-                                value={employeeData.address}
+                                value={formData.address}
                                 onChange={handleChange}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 rows="3"
@@ -326,7 +338,7 @@ const UpdateEmployee = () => {
                     <div className="mt-8 flex justify-end gap-4">
                         <button
                             type="button"
-                            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50"
+                            className="px-4 py-2 border cursor-pointer border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50"
                             onClick={() => navigate(-1)}
                         >
                             Cancel
@@ -334,7 +346,7 @@ const UpdateEmployee = () => {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className={`px-4 py-2 rounded-lg text-white ${isSubmitting ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+                            className={`px-4 py-2 rounded-lg cursor-pointer text-white ${isSubmitting ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'}`}
                         >
                             {isSubmitting ? 'Updating...' : 'Update Employee'}
                         </button>
