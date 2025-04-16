@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiClock, FiDollarSign, FiCalendar, FiChevronDown } from 'react-icons/fi';
+import { getAllPayrolls, getPayroll } from '../../utils/attendance';
 
 const ViewAttendance = () => {
     const [records, setRecords] = useState([]);
@@ -176,6 +177,18 @@ const ViewAttendance = () => {
     const currentRecords = records.slice(indexOfFirstRecord, indexOfLastRecord);
     const totalPages = Math.ceil(records.length / recordsPerPage);
 
+    useEffect(() => {
+       const fetchPayrolls = async () => {
+        const response = await getPayroll()
+        
+        if(response.status){
+            console.log(response.data)
+        }
+       }
+
+       fetchPayrolls()
+    }, [])
+    
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="mb-8">

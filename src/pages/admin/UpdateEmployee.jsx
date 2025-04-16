@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MdArrowBack } from 'react-icons/md';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getEmployeeRecord, updateEmployeeRecord } from '../../utils/employees';
+import { getEmployeeRecord, removeEmployee, updateEmployeeRecord } from '../../utils/employees';
 import { toast } from 'react-toastify';
 
 const UpdateEmployee = () => {
@@ -16,7 +16,7 @@ const UpdateEmployee = () => {
         wagePerHour: '',
         dailyWorkingHours: '',
         weeklyWorkingDays: '',
-        role: 'Employee',
+        role: 'employee',
         address: ''
     });
     const [errors, setErrors] = useState({});
@@ -26,7 +26,7 @@ const UpdateEmployee = () => {
         const { name, value } = e.target;
         setFormData({
             ...formData,
-            [name]: value
+            [name]: name === 'role' ? value.toLowerCase() : value
         });
     };
 
@@ -116,7 +116,7 @@ const UpdateEmployee = () => {
 
     const calculateMonthlySalary = (wagePerHour, dailyHours, weeklyDays) => {
         const weeklyHours = dailyHours * weeklyDays;
-        const monthlyHours = weeklyHours * 4; // Approximate 4 weeks in a month
+        const monthlyHours = weeklyHours * 4;
         return wagePerHour * monthlyHours;
     };
 
@@ -187,7 +187,7 @@ const UpdateEmployee = () => {
                         </div>
 
                         {/* Email */}
-                        <div>
+                        <div className='opacity-50'>
                             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="email">
                                 Email <span className="text-red-500">*</span>
                             </label>
@@ -195,6 +195,7 @@ const UpdateEmployee = () => {
                                 type="email"
                                 id="email"
                                 name="email"
+                                disabled
                                 value={formData.email}
                                 onChange={handleChange}
                                 className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.email ? 'border-red-500' : 'border-gray-300'
@@ -205,7 +206,7 @@ const UpdateEmployee = () => {
                         </div>
 
                         {/* CNIC */}
-                        <div>
+                        <div className='opacity-50'>
                             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="cnic">
                                 CNIC <span className="text-red-500">*</span>
                             </label>
@@ -213,6 +214,7 @@ const UpdateEmployee = () => {
                                 type="text"
                                 id="cnic"
                                 name="cnic"
+                                disabled
                                 value={formData.cnic}
                                 onChange={handleChange}
                                 className={`w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.cnic ? 'border-red-500' : 'border-gray-300'

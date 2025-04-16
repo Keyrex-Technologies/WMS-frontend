@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import GPSMap from '../../components/GPSMap';
+import { useSocket } from '../../context/SocketContext';
+import Cookies from 'js-cookie';
 
 const UserHome = () => {
   const [isInZone, setIsInZone] = useState(false);
@@ -7,9 +9,11 @@ const UserHome = () => {
   const [livePosition, setLivePosition] = useState(null);
   const [clockInTime, setClockInTime] = useState(null);
   const [clockOutTime, setClockOutTime] = useState(null);
-  const [timeWorked, setTimeWorked] = useState(0); // Time worked in seconds
-  const [currentTime, setCurrentTime] = useState(new Date()); // Current time for digital clock
-  const clockInTimerRef = useRef(null); // Timer reference
+  const [timeWorked, setTimeWorked] = useState(0);
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const clockInTimerRef = useRef(null);
+  const { socket } = useSocket();
+  const user = Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null;
 
   const status = () => {
     if (!isClockIn) return "Absent";
@@ -17,17 +21,35 @@ const UserHome = () => {
     return "Present";
   };
 
+  const handleIn = () => {
+    socket.emit('check-in', { userId: user._id, date: new Date() })
+  }
+
+  const handleOut = () => {
+    socket.emit('check-out', { userId: user._id, date: new Date() })
+  }
+
   // Timer effect for clocked-in employees
   useEffect(() => {
     if (isClockIn) {
+      socket.on("check-in-success", (data) => {
+        if (data) {
+          const workingHour = data.result?.data?.working_hours || data.result?.attendance?.working_hours;
+          const workedMinutes = workingHour * 60;
+          const workedSeconds = Math.floor(workedMinutes * 60); // convert to seconds
+          setClockInTime(new Date(workedMinutes * 60 * 1000));
+          setTimeWorked((prev) => prev + workedSeconds);
+
+        }
+      });
       clockInTimerRef.current = setInterval(() => {
         setTimeWorked((prevTime) => prevTime + 1);
-      }, 1000); // Update every second
+      }, 1000);
     } else {
       clearInterval(clockInTimerRef.current);
     }
 
-    return () => clearInterval(clockInTimerRef.current); // Cleanup on component unmount
+    return () => clearInterval(clockInTimerRef.current);
   }, [isClockIn]);
 
   // Update the current time for the digital clock every second
@@ -42,8 +64,17 @@ const UserHome = () => {
   useEffect(() => {
     if (isInZone && !isClockIn) {
       setIsClockIn(true);
-      setClockInTime(new Date());
-      setClockOutTime(null); // reset out time
+
+      socket.on("check-in-success", (data) => {
+        if (data) {
+          if (data.result.message === "Check-in successful") {
+            setClockInTime(new Date(data.result.data.checkin_time));
+          } else {
+            setClockInTime(new Date(data.result.attendance.checkin_time));
+          }
+        }
+      })
+      setClockOutTime(null);
     }
 
     if (!isInZone && isClockIn) {
@@ -116,10 +147,15 @@ const UserHome = () => {
         </div>
       </div>
 
+      <div className='space-x-4'>
+        <button onClick={handleIn}>In</button>
+        <button onClick={handleOut}>Out</button>
+      </div>
+
       <GPSMap
         setLivePosition={setLivePosition}
         zoneRadius={10}
-        mapCenter={{ lat: 33.5537018, lng: 73.1023554 }}
+        mapCenter={{ lat: 33.6560128, lng: 73.0529792 }}
         isInZone={isInZone}
         setIsInZone={setIsInZone}
         userHeading={livePosition?.heading}

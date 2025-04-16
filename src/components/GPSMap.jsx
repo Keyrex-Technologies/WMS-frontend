@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleMap, Marker, Circle, useJsApiLoader } from '@react-google-maps/api';
+import { useSocket } from '../context/SocketContext';
+import Cookies from 'js-cookie';
 
 const containerStyle = {
   width: '100%',
@@ -19,6 +21,9 @@ const GPSMap = ({
   isClockIn,
   setUserHeading,
 }) => {
+  const { socket, isConnected } = useSocket();
+  const user = Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null;
+
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: import.meta.env.VITE_APP_GOOGLE_MAPS_API_KEY,
@@ -28,6 +33,7 @@ const GPSMap = ({
   const [currentPosition, setCurrentPosition] = useState(null);
   const [map, setMap] = useState(null);
   const [positionValid, setPositionValid] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState(0);
 
   // Device orientation fallback for heading
   useEffect(() => {
@@ -70,51 +76,73 @@ const GPSMap = ({
     if (!isLoaded) return;
 
     let watchId;
+    let lastPosition = null;
 
     const handlePositionUpdate = (position) => {
+      const now = Date.now();
+      // Throttle updates to at most once per second
+      if (now - lastUpdateTime < 1000) return;
+      // console.log(position)
       const newPos = {
         lat: position.coords.latitude,
         lng: position.coords.longitude,
         accuracy: position.coords.accuracy || 9999,
         heading: position.coords.heading,
+        timestamp: position.timestamp,
       };
 
-      console.log('GPS Heading:', position);
-      if (newPos.heading !== null) {
+      // Update heading if available from GPS
+      if (newPos.heading !== null && !isNaN(newPos.heading)) {
         setUserHeading(Math.round(newPos.heading));
       }
 
-      const accuracyThreshold = 100;
+      const accuracyThreshold = 30; // More strict accuracy threshold (30 meters)
 
       if (newPos.accuracy > accuracyThreshold) {
         setPositionValid(false);
-        return;
+        // return;
       }
+
+      setPositionValid(true);
+      setLastUpdateTime(now);
+
+      // Always update position regardless of distance moved
+      // console.log(newPos)
+      setCurrentPosition(newPos);
 
       const distance = calculateDistance(newPos, mapCenter);
       const insideZone = distance <= zoneRadius;
 
-      const distanceMoved = currentPosition
-        ? calculateDistance(currentPosition, newPos)
-        : Number.POSITIVE_INFINITY;
+      // Update map position if it exists
+      // if (map) {
+      //   map.panTo(newPos);
+      // }
 
-      if (distanceMoved > 2) {
-        setCurrentPosition(newPos);
-        setPositionValid(true);
+      // Update live position data
+      setLivePosition({
+        ...newPos,
+        isInZone: insideZone,
+        distance,
+      });
+
+      // Check zone status changes
+      if (insideZone !== isInZone) {
         setIsInZone(insideZone);
-        setLivePosition({
-          ...newPos,
-          isInZone: insideZone,
-          distance,
-        });
-
-        if (map) {
-          map.panTo(newPos);
-        }
 
         if (insideZone && !isClockIn) {
           setIsClockIn(true);
-          setClockInTime(new Date());
+          socket.emit('check-in', { userId: user._id, date: new Date() })
+
+          socket.on("check-in-success", (data) => {
+            if (data) {
+              console.log(data)
+              if (data.result.message === "Check-in successful") {
+                setClockInTime(new Date(data.result.data.checkin_time));
+              } else {
+                setClockInTime(new Date(data.result.attendance.checkin_time));
+              }
+            }
+          })
         }
 
         if (!insideZone && isClockIn) {
@@ -133,8 +161,9 @@ const GPSMap = ({
         },
         {
           enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0,
+          timeout: 10000, // Longer timeout
+          maximumAge: 0, // Always get fresh position
+          distanceFilter: 0, // Get updates even if position hasn't changed much
         }
       );
     }
@@ -148,19 +177,19 @@ const GPSMap = ({
     mapCenter,
     zoneRadius,
     calculateDistance,
-    currentPosition,
-    setIsInZone,
     setLivePosition,
+    isInZone,
+    setIsInZone,
     isClockIn,
     setIsClockIn,
     setClockInTime,
     setClockOutTime,
     setUserHeading,
+    lastUpdateTime,
   ]);
 
   if (loadError) return <div className="p-4 text-red-600">Error loading map</div>;
   if (!isLoaded) return <div className="p-4">Loading map...</div>;
-  if (!positionValid) return <div className="w-full h-[400px] flex items-center justify-center">Response is updating...</div>;
 
   const markerIcon = {
     path: window.google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
@@ -179,7 +208,7 @@ const GPSMap = ({
     <div className="w-full h-full rounded-lg overflow-hidden relative">
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={mapCenter}
+        // center={history}
         onLoad={onLoad}
         options={{
           streetViewControl: true,
@@ -224,6 +253,7 @@ const GPSMap = ({
         {distance !== null && (
           <p className="text-sm">
             Distance: {distance}m • Heading: {userHeading ?? 'N/A'}°
+            {!positionValid && <span className="text-yellow-600"> • Low accuracy</span>}
           </p>
         )}
       </div>

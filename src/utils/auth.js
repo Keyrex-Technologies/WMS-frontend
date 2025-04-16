@@ -35,9 +35,7 @@ export const verifyOtp = async (data) => {
 
 export const signInUser = async (data) => {
   try {
-    const response = await axios.post(`${backendUrl}/user/signin`, data, {
-      cancelToken: source.token,
-    });
+    const response = await axios.post(`${backendUrl}/user/signin`, data);
     return response;
   } catch (err) {
     if (axios.isCancel(err)) {

@@ -20,6 +20,7 @@ import ViewAttendance from "./pages/user/ViewAttendance";
 import UserHome from "./pages/user/UserHome";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { SocketProvider } from "./context/SocketContext";
 
 const Loader = lazy(() => import("./components/Loader"));
 const AuthLayout = lazy(() => import("./layouts/AuthLayout"));
@@ -85,19 +86,21 @@ const appRouter = createBrowserRouter([
 const App = () => {
   return (
     <Suspense fallback={<Loader />}>
-      <RouterProvider router={appRouter} />
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={true}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme="light"
-      />
+      <SocketProvider>
+        <RouterProvider router={appRouter} />
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={true}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="light"
+        />
+      </SocketProvider>
     </Suspense>
   );
 };

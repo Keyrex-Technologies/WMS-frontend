@@ -52,3 +52,40 @@ export const getAllAttendance = async () => {
     }
   }
 };
+
+export const getAllPayrolls = async () => {
+  try {
+    // ?month=3
+    const response = await axios.get(
+      `${backendUrl}/attendance/get-all-payrolls`,
+      {
+        cancelToken: source.token,
+      }
+    );
+    return response;
+  } catch (err) {
+    if (axios.isCancel(err)) {
+      console.log("Request canceled", err.message);
+    } else {
+      throw new Error(err.response?.data?.message || "Failed to verify OTP");
+    }
+  }
+};
+
+export const getPayroll = async () => {
+  try {
+    const response = await axios.get(
+      `${backendUrl}/attendance/get-payroll?employeeId=67ffa738bcdea395296a60aa&month=4`,
+      {
+        cancelToken: source.token,
+      }
+    );
+    return response;
+  } catch (err) {
+    if (axios.isCancel(err)) {
+      console.log("Request canceled", err.message);
+    } else {
+      throw new Error(err.response?.data?.message || "Failed to verify OTP");
+    }
+  }
+};

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { getAllEmployees } from "../../utils/employees";
+import { getAllEmployees, removeEmployee } from "../../utils/employees";
+import { toast } from "react-toastify";
 
 const EmployeeManagement = () => {
     const navigate = useNavigate();
     const [employees, setEmployees] = useState([]);
-
     const [searchTerm, setSearchTerm] = useState("");
     const [deletingId, setDeletingId] = useState(null);
 
@@ -15,12 +15,19 @@ const EmployeeManagement = () => {
         emp.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleDelete = (id) => {
-        setDeletingId(id);
-        setTimeout(() => {
-            setEmployees((prevEmployees) => prevEmployees.filter((emp) => emp.id !== id));
-            setDeletingId(null);
-        }, 300);
+    const handleDelete = async (id) => {
+        setDeletingId(id)
+        try {
+            const response = await removeEmployee(id)
+            if (response.status) {
+                toast.success(response.data.message)
+                fetchAllEmployees();
+            }
+        } catch (err) {
+            toast.error(err.response?.data?.message || err.response?.data?.error || "Something went wrong!");
+        } finally {
+            setDeletingId(null)
+        }
     };
 
     // const handleStatusToggle = (id) => {
@@ -51,15 +58,15 @@ const EmployeeManagement = () => {
         }
     };
 
-    useEffect(() => {
-        const fetchAllEmployees = async () => {
-            const response = await getAllEmployees();
-            if (response.status) {
-                console.log(response.data)
-                setEmployees(response.data);
-            }
+    const fetchAllEmployees = async () => {
+        const response = await getAllEmployees();
+        if (response.status) {
+            console.log(response.data)
+            setEmployees(response.data);
         }
+    }
 
+    useEffect(() => {
         fetchAllEmployees()
     }, [])
 
@@ -139,9 +146,9 @@ const EmployeeManagement = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Role
                                 </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Status
-                                </th>
+                                </th> */}
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Wage per Hour
                                 </th>
@@ -201,7 +208,7 @@ const EmployeeManagement = () => {
                                                 {employee.role}
                                             </motion.span>
                                         </td>
-
+                                        {/* 
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <motion.span
                                                 whileHover={{ scale: 1.05 }}
@@ -212,7 +219,7 @@ const EmployeeManagement = () => {
                                             >
                                                 {employee.status}
                                             </motion.span>
-                                        </td>
+                                        </td> */}
 
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                             {employee.wagePerHour}
@@ -235,10 +242,16 @@ const EmployeeManagement = () => {
                                                 <motion.button
                                                     whileHover={{ scale: 1.05 }}
                                                     whileTap={{ scale: 0.95 }}
-                                                    className="px-4 py-1.5 rounded-lg cursor-pointer bg-red-100 text-red-700 hover:bg-red-200 font-medium shadow-sm transition-colors duration-200"
+                                                    disabled={deletingId === employee.employeeId}
+                                                    className={`px-4 py-1.5 rounded-lg cursor-pointer font-medium shadow-sm transition-colors duration-200
+                                                        ${deletingId === employee.employeeId
+                                                            ? 'bg-red-200 text-red-400 cursor-not-allowed'
+                                                            : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                                        }
+                                                      `}
                                                     onClick={() => handleDelete(employee.employeeId)}
                                                 >
-                                                    Delete
+                                                    {deletingId === employee.employeeId ? "Deleting" : "Delete"}
                                                 </motion.button>
 
                                                 {/* Optional: Status Toggle Button */}
@@ -274,7 +287,7 @@ const EmployeeManagement = () => {
                 <div className="text-sm text-gray-500">
                     Showing 1 to {filteredEmployees.length} of {employees.length} entries
                 </div>
-                
+
                 <div className="flex gap-2">
                     <motion.button
                         whileHover={{ y: -2 }}
