@@ -10,6 +10,7 @@ import {
 } from "react-icons/md";
 import { IoMdCash } from "react-icons/io";
 import Cookies from "js-cookie";
+import { logout } from "../utils/profile";
 
 const adminNavItems = [
     { href: "/admin", icon: <MdDashboard size={18} />, label: "Dashboard" },
@@ -35,12 +36,10 @@ const navItemsBottom = [
     { href: "", icon: <MdLogout size={18} />, label: "Logout" },
 ];
 
-// Separator Component
 const Separator = () => (
     <div className="w-full my-4 h-[1px] bg-gradient-to-r from-primary/5 via-primary to-primary/5"></div>
 );
 
-// NavItem Component
 const NavItem = ({ href, icon, label, isActive, onClick }) => (
     <li className="w-full">
         <Link to={href} onClick={onClick}>
@@ -65,15 +64,15 @@ const NavItem = ({ href, icon, label, isActive, onClick }) => (
     </li>
 );
 
-// Sidebar Component
 const Sidebar = ({ isSidebarOpen, toggleSidebar, userRole }) => {
     const location = useLocation();
     const pathname = location.pathname;
     const navigate = useNavigate();
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
         Cookies.remove("token");
         Cookies.remove("user");
+        await logout()
         navigate('/')
     }
 
