@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 import Cookies from "js-cookie";
 
 // Context creation with type
@@ -74,6 +74,20 @@ export const SocketProvider = ({ children }) => {
       }
     };
   }, []);
+
+  // Corrected dependency array here:
+  useEffect(() => {
+    return () => {
+      if (socket && user?._id) {
+        socket.emit("check-out", {
+          userId: user._id,
+          date: new Date(),
+        });
+      } else {
+        console.warn("Socket or user is not available on unmount");
+      }
+    };
+  }, [socket, user]); // ✅ corrected dependencies
 
   const value = {
     socket,

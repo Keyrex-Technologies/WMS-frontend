@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaUsers, FaCheckCircle } from 'react-icons/fa';
 import { getStats, getTodaysAttendance } from '../../utils/attendance';
-
+import Cookies from 'js-cookie';
+import { getOrigins, setOrigins } from '../../utils/origins'
+import { toast } from 'react-toastify';
 const container = {
   hidden: { opacity: 0 },
   show: {
@@ -28,12 +30,31 @@ const cardHover = {
 };
 
 const DashbaordHome = () => {
-  const [todaysAttendance, setTodaysAttendance] = useState([])
+  const [todaysAttendance, setTodaysAttendance] = useState([]);
+  const [originData, setOriginData] = useState({ lat: "", lng: "" });
+  const user = Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null;
   const [stats, seStats] = useState({
     totalEmployees: 0,
     presentCount: 0,
     attendancePercentage: 0,
   });
+
+  const handleChangeLocation = (e) => {
+    const { name, value } = e.target;
+    setOriginData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmitLocation = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await setOrigins(originData);
+      if(response.status){
+        toast.success(response.data.message);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.response?.data?.error || "Something went wrong!");
+    }
+  };
 
   const fetchStats = async () => {
     const response = await getStats();
@@ -50,9 +71,9 @@ const DashbaordHome = () => {
         const totalSeconds = Math.floor(workingHoursFloat * 3600);
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
-  
+
         const workingHours = `${hours}h ${minutes}m`;
-  
+
         return {
           id: item._id,
           employeeId: item.employeeId,
@@ -60,29 +81,41 @@ const DashbaordHome = () => {
           email: item.email,
           clockIn: item.checkin_time
             ? new Date(item.checkin_time).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })
+              hour: '2-digit',
+              minute: '2-digit',
+            })
             : null,
           clockOut: item.checkout_time
             ? new Date(item.checkout_time).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })
+              hour: '2-digit',
+              minute: '2-digit',
+            })
             : null,
           working_hour: workingHours,
           working_hour_in_seconds: totalSeconds,
           status: item.status === 'in' ? 'Clock In' : 'Clock Out',
         };
       });
-  
+
       setTodaysAttendance(formatted);
     }
   };
-   
+
+  const fetchOrigins = async () => {
+    try {
+      const res = await getOrigins();
+      if (res?.status) {
+        setOriginData(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch origins:", err);
+    }
+  };
+
   useEffect(() => {
     fetchStats();
-    fetchTodaysAttendance()
+    fetchTodaysAttendance();
+    fetchOrigins();
   }, []);
 
   return (
@@ -92,6 +125,54 @@ const DashbaordHome = () => {
       transition={{ duration: 0.5 }}
       className="w-full sm:px-6 space-y-8 mb-10"
     >
+      {user.role === "admin" && (
+        <motion.form
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          onSubmit={handleSubmitLocation}
+          className="bg-white rounded-lg shadow-lg p-6"
+        >
+          <h2 className="text-xl font-bold mb-4">Update Origin Location</h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">Latitude</label>
+              <input
+                type="number"
+                name="lat"
+                value={originData.lat}
+                onChange={handleChangeLocation}
+                className="w-full border border-gray-300 rounded-full px-3 py-2 text-sm outline-none"
+                step="0.000001"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-gray-700 mb-1">Longitude</label>
+              <input
+                type="number"
+                name="lng"
+                value={originData.lng}
+                onChange={handleChangeLocation}
+                className="w-full border border-gray-300 rounded-full px-3 py-2 text-sm outline-none"
+                step="0.000001"
+                required
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="mt-6 bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-full"
+          >
+            Save Location
+          </button>
+        </motion.form>
+
+      )}
+
       {/* Quick Stats */}
       <motion.div
         variants={container}
@@ -221,7 +302,7 @@ const DashbaordHome = () => {
                           {emp.working_hour}
                         </div>
                       </td>
-                      
+
                       <td className="px-6 py-4 whitespace-nowrap">
                         <motion.span
                           initial={{ scale: 0.9 }}

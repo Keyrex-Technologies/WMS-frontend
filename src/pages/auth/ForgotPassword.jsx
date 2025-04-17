@@ -119,7 +119,7 @@ function ForgotPassword() {
                 <div className="relative z-10 flex flex-col items-start justify-center w-full h-full px-16">
                     <div className="flex items-center gap-3 mb-12">
                         <Utensils className="w-12 h-12 text-white" />
-                        <span className="text-3xl font-bold text-white">RestaurantPro</span>
+                        <span className="text-3xl font-bold text-white">WMS</span>
                     </div>
 
                     <h2 className="text-5xl font-bold text-white mb-8 leading-tight">

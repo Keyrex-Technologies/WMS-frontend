@@ -11,6 +11,7 @@ import {
 import { IoMdCash } from "react-icons/io";
 import Cookies from "js-cookie";
 import { logout } from "../utils/profile";
+import { useSocket } from "../context/SocketContext";
 
 const adminNavItems = [
     { href: "/admin", icon: <MdDashboard size={18} />, label: "Dashboard" },
@@ -68,8 +69,16 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, userRole }) => {
     const location = useLocation();
     const pathname = location.pathname;
     const navigate = useNavigate();
+    const { socket } = useSocket();
 
     const handleLogout = async () => {
+        const user = JSON.parse(Cookies.get("user"));
+        if (user.role === "employee" && socket) {
+            socket.emit('check-out', {
+                userId: user?._id,
+                date: new Date(),
+            });
+        }
         Cookies.remove("token");
         Cookies.remove("user");
         await logout()
@@ -88,7 +97,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, userRole }) => {
                 <div className="w-full text-center flex flex-col">
                     <div className="w-full py-7 px-4">
                         <h2 className="text-[22px] font-montserrat text-textdark font-bold leading-[135%]">
-                            {userRole === "admin" ? "Admin Dashboard" :userRole === "manager" ? "Manager Dashboard":"User Dashboard"}
+                            {userRole === "admin" ? "Admin Dashboard" : userRole === "manager" ? "Manager Dashboard" : "User Dashboard"}
                         </h2>
                     </div>
 

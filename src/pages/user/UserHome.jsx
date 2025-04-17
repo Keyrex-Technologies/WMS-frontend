@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import GPSMap from '../../components/GPSMap';
 import { useSocket } from '../../context/SocketContext';
 import Cookies from 'js-cookie';
+import Loader from '../../components/Loader';
+import { getOrigins } from '../../utils/origins';
 
 const UserHome = () => {
   const { socket } = useSocket();
@@ -12,13 +14,24 @@ const UserHome = () => {
   const [clockOutTime, setClockOutTime] = useState(null);
   const [timeWorked, setTimeWorked] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [originData, setOriginData] = useState({ lat: "", lng: "" });
   const clockInTimerRef = useRef(null);
   const user = Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null;
 
   const status = () => {
     if (!isClockIn) return "Absent";
-    // if (clockInTime && clockInTime.getHours() > 9) return "Late";
     return "Present";
+  };
+
+  const fetchOrigins = async () => {
+    try {
+      const res = await getOrigins();
+      if (res?.status) {
+        setOriginData(res.data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch origins:", err);
+    }
   };
 
   useEffect(() => {
@@ -55,16 +68,19 @@ const UserHome = () => {
       }
     };
 
-    socket.on("check-in-success", handleCheckInSuccess);
-    socket.on("check-out-success", handleCheckOutSuccess);
+    if (socket) {
+      socket.on("check-in-success", handleCheckInSuccess);
+      socket.on("check-out-success", handleCheckOutSuccess);
+    }
 
     return () => {
-      socket.off("check-in-success", handleCheckInSuccess);
-      socket.off("check-out-success", handleCheckOutSuccess);
+      if (socket) {
+        socket.off("check-in-success", handleCheckInSuccess);
+        socket.off("check-out-success", handleCheckOutSuccess);
+      }
     };
   }, [socket]);
 
-  // Timer for counting working time
   useEffect(() => {
     if (isClockIn) {
       clockInTimerRef.current = setInterval(() => {
@@ -78,24 +94,26 @@ const UserHome = () => {
     }
 
     return () => clearInterval(clockInTimerRef.current);
-  }, [isClockIn]);
+  }, [isClockIn, socket]);
 
-  // Update current time every second
   useEffect(() => {
+    fetchOrigins();
     const intervalId = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
+
     return () => clearInterval(intervalId);
   }, []);
 
-  // Auto clock-in/out based on zone
   useEffect(() => {
-    if (isInZone && !isClockIn) {
-      socket.emit('check-in', { userId: user._id, date: new Date() });
-    } else if (!isInZone && isClockIn) {
-      socket.emit('check-out', { userId: user._id, date: new Date() });
+    if (socket && user) {
+      if (isInZone && !isClockIn) {
+        socket.emit('check-in', { userId: user._id, date: new Date() });
+      } else if (!isInZone && isClockIn) {
+        socket.emit('check-out', { userId: user._id, date: new Date() });
+      }
     }
-  }, [isInZone, isClockIn]);
+  }, [isInZone, isClockIn, user, socket]);
 
   const formatTimeWorked = (seconds) => {
     const hours = Math.floor(seconds / 3600);
@@ -156,7 +174,7 @@ const UserHome = () => {
       <GPSMap
         setLivePosition={setLivePosition}
         zoneRadius={10}
-        mapCenter={{ lat: 33.5537031, lng: 73.1023577 }}
+        mapCenter={{ lat: originData.lat || 33.5537031, lng: originData.lng || 73.1023577 }}
         isInZone={isInZone}
         setIsInZone={setIsInZone}
         userHeading={livePosition?.heading}

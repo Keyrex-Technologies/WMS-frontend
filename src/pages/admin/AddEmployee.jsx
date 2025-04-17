@@ -282,7 +282,7 @@ const AddEmployee = () => {
                         {/* Wage Per Hour */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1" htmlFor="wagePerHour">
-                                Wage Per Hour (PKR) <span className="text-red-500">*</span>
+                                Wage Per Hour (£) <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="number"

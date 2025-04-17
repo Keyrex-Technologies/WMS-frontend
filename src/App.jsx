@@ -2,7 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { SocketProvider } from "./context/SocketContext";
+import AccountNotApproved from "./pages/auth/AccountNotApproved";
 // Lazy loaded components
 const Login = lazy(() => import("./pages/auth/Login"));
 const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
@@ -39,6 +39,7 @@ const appRouter = createBrowserRouter([
       { path: "verify-otp", element: <VerifyOTP /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "reset-password", element: <ResetPassword /> },
+      { path: "not-approve", element: <AccountNotApproved /> },
     ],
   },
   {
@@ -87,7 +88,6 @@ const appRouter = createBrowserRouter([
 const App = () => {
   return (
     <Suspense fallback={<Loader />}>
-      <SocketProvider>
         <RouterProvider router={appRouter} />
         <ToastContainer
           position="top-right"
@@ -101,7 +101,6 @@ const App = () => {
           pauseOnHover
           theme="light"
         />
-      </SocketProvider>
     </Suspense>
   );
 };

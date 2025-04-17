@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FiClock, FiDollarSign, FiCalendar, FiChevronDown } from 'react-icons/fi';
+import { FiClock, FiCalendar, FiChevronDown } from 'react-icons/fi';
 import { getPayroll } from '../../utils/attendance';
 import Cookies from 'js-cookie';
+import { BiPound } from 'react-icons/bi';
 
 const ViewAttendance = () => {
     const [records, setRecords] = useState([]);
@@ -19,13 +20,13 @@ const ViewAttendance = () => {
     }));
 
     const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('en-US', {
+        return new Intl.NumberFormat('en-GB', {
             style: 'currency',
-            currency: 'USD',
+            currency: 'GBP',
             minimumFractionDigits: 2
         }).format(amount);
     };
-
+    
     const formatDate = (dateString) => {
         const date = new Date(dateString);
         return date.toLocaleDateString('en-US', {
@@ -191,7 +192,7 @@ const ViewAttendance = () => {
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                         <div className="flex items-center">
-                                            <FiDollarSign className="mr-1" /> Daily Salary
+                                            <BiPound className="mr-1" /> Daily Salary
                                         </div>
                                     </th>
                                 </tr>

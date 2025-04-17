@@ -22,9 +22,12 @@ export const getStats = async () => {
 
 export const getTodaysAttendance = async () => {
   try {
-    const response = await axios.get(`${backendUrl}/attendance/get-daily-attendance`, {
-      cancelToken: source.token,
-    });
+    const response = await axios.get(
+      `${backendUrl}/attendance/get-daily-attendance`,
+      {
+        cancelToken: source.token,
+      }
+    );
     return response;
   } catch (err) {
     if (axios.isCancel(err)) {
@@ -76,6 +79,24 @@ export const getPayroll = async (user_id, month) => {
   try {
     const response = await axios.get(
       `${backendUrl}/attendance/get-payroll?employeeId=${user_id}&month=${month}`,
+      {
+        cancelToken: source.token,
+      }
+    );
+    return response;
+  } catch (err) {
+    if (axios.isCancel(err)) {
+      console.log("Request canceled", err.message);
+    } else {
+      throw new Error(err.response?.data?.message || "Failed to verify OTP");
+    }
+  }
+};
+
+export const getCurrentAttendance = async (user_id) => {
+  try {
+    const response = await axios.get(
+      `${backendUrl}/attendance/get-current-attendance/${user_id}`,
       {
         cancelToken: source.token,
       }

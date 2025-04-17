@@ -154,7 +154,7 @@ function SignUp() {
         <div className="relative z-10 flex flex-col items-start justify-center w-full h-full px-16">
           <div className="flex items-center gap-3 mb-12">
             <Utensils className="w-12 h-12 text-white" />
-            <span className="text-3xl font-bold text-white">RestaurantPro</span>
+            <span className="text-3xl font-bold text-white">WMS</span>
           </div>
 
           <h2 className="text-5xl font-bold text-white mb-8 leading-tight">
@@ -182,7 +182,7 @@ function SignUp() {
         <div className="w-full max-w-xl">
           <div className="mb-12">
             <h3 className="text-4xl font-bold text-gray-900 mb-3">Create Your Account</h3>
-            <p className="text-gray-600 text-lg">Join thousands of restaurants already using RestaurantPro</p>
+            <p className="text-gray-600 text-lg">Join thousands of restaurants already using WMS</p>
           </div>
 
           <Formik

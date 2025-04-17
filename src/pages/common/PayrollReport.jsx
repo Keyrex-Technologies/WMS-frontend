@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiClock, FiDollarSign, FiCalendar, FiChevronDown, FiUser } from 'react-icons/fi';
+import { FiSearch, FiClock, FiCalendar, FiChevronDown } from 'react-icons/fi';
+import { BiPound } from 'react-icons/bi';
 import { getAllPayrolls } from '../../utils/attendance';
 
 const bubbles = [
@@ -26,9 +27,9 @@ const PayrollReport = () => {
   }));
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'GBP',
       minimumFractionDigits: 2
     }).format(amount);
   };
@@ -110,7 +111,7 @@ const PayrollReport = () => {
 
   const isSingleEmployeeView = () => {
     if (searchTerm === '' || filteredRecords.length === 0) return false;
-    
+
     const firstEmployeeId = filteredRecords[0].employeeId;
     return filteredRecords.every(record => record.employeeId === firstEmployeeId);
   };
@@ -227,7 +228,7 @@ const PayrollReport = () => {
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   <div className="flex items-center">
-                    <FiDollarSign className="mr-1" /> Daily Salary
+                    <BiPound className="mr-1" /> Daily Salary
                   </div>
                 </th>
               </tr>
@@ -258,10 +259,9 @@ const PayrollReport = () => {
                       {formatDate(record.date)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        record.status === 'Present'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                      <span className={`px-2 py-1 text-xs rounded-full ${record.status === 'Present'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
                         }`}>
                         {record.status}
                       </span>

@@ -34,17 +34,22 @@ function Login() {
             const response = await signInUser(values);
             if (response.status) {
                 toast.success(response.data?.message);
-                Cookies.set('token', response.data?.token);
-                Cookies.set('user', JSON.stringify(response.data?.user));
-                if (response.data?.user.role) {
-                    if (response.data?.user.role === "employee") {
-                        navigate('/user')
-                    } else {
-                        navigate(`/${response.data?.user.role}`);
-                    }
-                } else{
-                    toast.error("User role not found!");
 
+                if (response.data?.user.isApproved) {
+                    Cookies.set('token', response.data?.token);
+                    Cookies.set('user', JSON.stringify(response.data?.user));
+                    if (response.data?.user.role) {
+                        if (response.data?.user.role === "employee") {
+                            navigate('/user')
+                        } else {
+                            navigate(`/${response.data?.user.role}`);
+                        }
+                    } else {
+                        toast.error("User role not found!");
+
+                    }
+                } else {
+                    navigate('not-approve')
                 }
             }
         } catch (e) {
@@ -140,7 +145,7 @@ function Login() {
                 <div className="relative z-10 flex flex-col items-start justify-center w-full h-full px-16">
                     <div className="flex items-center gap-3 mb-12">
                         <Utensils className="w-12 h-12 text-white" />
-                        <span className="text-3xl font-bold text-white">RestaurantPro</span>
+                        <span className="text-3xl font-bold text-white">WMS</span>
                     </div>
 
                     <h2 className="text-5xl font-bold text-white mb-8 leading-tight">
@@ -168,7 +173,7 @@ function Login() {
                 <div className="w-full max-w-xl">
                     <div className="mb-12">
                         <h3 className="text-4xl font-bold text-gray-900 mb-3">Sign In</h3>
-                        <p className="text-gray-600 text-lg">Welcome back to RestaurantPro</p>
+                        <p className="text-gray-600 text-lg">Welcome back to WMS</p>
                     </div>
 
                     <Formik
