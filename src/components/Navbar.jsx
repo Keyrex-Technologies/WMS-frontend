@@ -2,10 +2,12 @@ import React from "react";
 import { useLocation, Link } from "react-router-dom";
 import { FiUser } from "react-icons/fi";
 import { IoIosArrowBack } from "react-icons/io";
+import Cookies from "js-cookie";
 
 const Navbar = ({ toggleSidebar }) => {
   const location = useLocation();
   const pathname = location.pathname;
+  const user = Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null;
 
   // Function to get the page title based on the current route
   const getPageTitle = () => {
@@ -25,7 +27,7 @@ const Navbar = ({ toggleSidebar }) => {
     return initials;
   };
 
-  const userName = "Alice Roberts"; // Sample user name
+  const userName = user.name;
   const userInitials = getUserInitials(userName);
 
   return (

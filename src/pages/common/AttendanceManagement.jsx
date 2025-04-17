@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiFilter, FiDownload, FiCalendar, FiRefreshCw } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiCalendar, FiRefreshCw } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { getAllAttendance } from '../../utils/attendance';
@@ -10,7 +10,7 @@ const bubbles = [
   "bg-red-100 text-red-600",
   "bg-green-100 text-green-600",
   "bg-yellow-100 text-yellow-600"
-]
+];
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -20,20 +20,31 @@ const itemVariants = {
 
 const StatusBadge = ({ status }) => {
   const statusStyles = {
-    present: 'bg-green-100 text-green-800',
-    absent: 'bg-red-100 text-red-800',
-    late: 'bg-yellow-100 text-yellow-800',
-    'half-day': 'bg-blue-100 text-blue-800'
+    Present: 'bg-green-100 text-green-800',
+    Absent: 'bg-red-100 text-red-800',
+    Late: 'bg-yellow-100 text-yellow-800',
+    'Half Day': 'bg-blue-100 text-blue-800'
   };
 
   return (
     <motion.span
       whileHover={{ scale: 1.05 }}
-      className={`px-2 py-1 text-xs capitalize font-medium rounded-full ${statusStyles[status] || 'bg-gray-100 text-gray-800'}`}
+      className={`px-2 py-1 text-xs font-medium rounded-full ${statusStyles[status] || 'bg-gray-100 text-gray-800'}`}
     >
       {status}
     </motion.span>
   );
+};
+
+const formatTime = (dateString) => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  return format(date, 'hh:mm a');
+};
+
+const formatHours = (hours) => {
+  if (!hours) return 'N/A';
+  return `${hours.toFixed(1)} hrs`;
 };
 
 const AttendanceManagement = () => {
@@ -46,13 +57,13 @@ const AttendanceManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
-  // const [isExporting, setIsExporting] = useState(false);
   const recordsPerPage = 10;
 
   const filteredAttendance = allAttendance.filter(record => {
-    const matchesSearch = record.employee.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = record.employeeName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'All' ? true : record.status === statusFilter;
     let matchesDate = true;
+
     if (dateRange.start && dateRange.end) {
       const recordDate = parseISO(record.date);
       const startDate = parseISO(dateRange.start);
@@ -74,40 +85,22 @@ const AttendanceManagement = () => {
     setCurrentPage(1);
   };
 
-  // Handle export with loading state
-  // const handleExport = () => {
-  //   setIsExporting(true);
-  //   setTimeout(() => {
-  //     setIsExporting(false);
-  //     // In a real app, this would trigger a download
-  //     console.log('Exporting filtered data:', filteredAttendance);
-  //     alert('Export functionality would download the data in CSV format');
-  //   }, 1500);
-  // };
-
   const getRandomColor = () => {
     return bubbles[Math.floor(Math.random() * bubbles.length)];
   };
 
   const fetchAllAttendance = async () => {
-    const response = await getAllAttendance()
+    const response = await getAllAttendance();
     if (response.status) {
-      console.log(response.data.attendance)
       setAllAttendance(response.data.attendance.map(item => {
         return {
-          emp_id: item.employeeId,
-          employee: item.employeeName,
-          date: new Date(item.timestamp).toISOString().split("T")[0],
-          role: item.role,
-          checkIn: '10:00 AM',
-          checkOut: '04:30 PM',
-          status: item.status,
-          hoursWorked: '6.5',
-          avatarColor: getRandomColor()
-        }
-      }))
+          ...item,
+          avatarColor: getRandomColor(),
+          date: item.date.split('T')[0] // Extract just the date part
+        };
+      }));
     }
-  }
+  };
 
   const indexOfLastRecord = currentPage * recordsPerPage;
   const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
@@ -115,20 +108,37 @@ const AttendanceManagement = () => {
   const totalPages = Math.ceil(filteredAttendance.length / recordsPerPage);
 
   useEffect(() => {
-    fetchAllAttendance()
-  }, [])
+    fetchAllAttendance();
+  }, []);
 
   useEffect(() => {
-    if (timePeriod === 'weekly') {
-      const start = format(new Date(new Date().setDate(new Date().getDate() - 7)), 'yyyy-MM-dd');
-      const end = format(new Date(), 'yyyy-MM-dd');
-      setDateRange({ start, end });
-    } else if (timePeriod === 'monthly') {
-      const start = format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), 'yyyy-MM-dd');
-      const end = format(new Date(), 'yyyy-MM-dd');
-      setDateRange({ start, end });
-    } else if (timePeriod === '') {
-      setDateRange({ start: '', end: '' });
+    if (timePeriod === "weekly") {
+      const today = new Date();
+      const weekAgo = new Date();
+      weekAgo.setDate(today.getDate() - 7);
+
+      if (!isNaN(weekAgo.getTime()) && !isNaN(today.getTime())) {
+        const start = format(weekAgo, "yyyy-MM-dd");
+        const end = format(today, "yyyy-MM-dd");
+        setDateRange({ start, end });
+      } else {
+        console.error("Invalid date for weekly range");
+        setDateRange({ start: "", end: "" });
+      }
+    } else if (timePeriod === "monthly") {
+      const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      const today = new Date();
+
+      if (!isNaN(firstDay.getTime()) && !isNaN(today.getTime())) {
+        const start = format(firstDay, "yyyy-MM-dd");
+        const end = format(today, "yyyy-MM-dd");
+        setDateRange({ start, end });
+      } else {
+        console.error("Invalid date for monthly range");
+        setDateRange({ start: "", end: "" });
+      }
+    } else if (timePeriod === "") {
+      setDateRange({ start: "", end: "" });
     }
   }, [timePeriod]);
 
@@ -183,9 +193,9 @@ const AttendanceManagement = () => {
                   value={timePeriod}
                   onChange={(e) => setTimePeriod(e.target.value)}
                 >
+                  <option value="">All Time</option>
                   <option value="weekly">Weekly</option>
                   <option value="monthly">Monthly</option>
-                  <option value="custom">Custom Range</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                   <FiCalendar className="text-gray-400" />
@@ -205,7 +215,7 @@ const AttendanceManagement = () => {
                   value={dateRange.start}
                   onChange={(e) => {
                     setDateRange({ ...dateRange, start: e.target.value });
-                    if (timePeriod !== 'custom') setTimePeriod('custom');
+                    setTimePeriod('');
                   }}
                 />
               </div>
@@ -223,9 +233,8 @@ const AttendanceManagement = () => {
                   value={dateRange.end}
                   onChange={(e) => {
                     setDateRange({ ...dateRange, end: e.target.value });
-                    if (timePeriod !== 'custom') setTimePeriod('custom');
+                    setTimePeriod('');
                   }}
-                  disabled={timePeriod !== 'custom'}
                 />
               </div>
             </motion.div>
@@ -241,8 +250,6 @@ const AttendanceManagement = () => {
                   <option value="All">All Statuses</option>
                   <option value="Present">Present</option>
                   <option value="Absent">Absent</option>
-                  <option value="Late">Late</option>
-                  <option value="Half Day">Half Day</option>
                 </select>
                 <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                   <FiFilter className="text-gray-400" />
@@ -259,20 +266,6 @@ const AttendanceManagement = () => {
               <FiRefreshCw className="text-gray-600" />
               Reset Filters
             </motion.button>
-
-            {/* Export Button */}
-            {/* <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleExport}
-              disabled={isExporting || filteredAttendance.length === 0}
-              className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-white col-span-2 ${isExporting ? 'bg-blue-400' :
-                filteredAttendance.length === 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-            >
-              <FiDownload />
-              {isExporting ? 'Exporting...' : 'Export Report'}
-            </motion.button> */}
           </div>
         </motion.div>
 
@@ -287,13 +280,12 @@ const AttendanceManagement = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Emp_ID</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check In</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Check Out</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hours Worked</th>
                 </tr>
               </thead>
 
@@ -302,34 +294,39 @@ const AttendanceManagement = () => {
                   {currentRecords.length > 0 ? (
                     currentRecords.map((record, index) => (
                       <motion.tr
-                        key={index}
+                        key={record._id}
                         variants={itemVariants}
                         initial="hidden"
                         animate="visible"
                         exit="exit"
                         className="hover:bg-gray-50"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.emp_id}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className={`flex-shrink-0 h-10 w-10 rounded-full ${record.avatarColor} flex items-center justify-center`}>
-                              <span className="font-medium">{record.employee.charAt(0)}</span>
+                              <span className="font-medium">{record.employeeName.charAt(0)}</span>
                             </div>
                             <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{record.employee}</div>
-                              <div className="text-sm text-gray-500">{record.emp_id}</div>
+                              <div className="text-sm font-medium text-gray-900">{record.employeeName}</div>
+                              <div className="text-sm text-gray-500">{record.employeeId}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {format(new Date(record.date), 'MMM dd, yyyy')}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.checkIn}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.checkOut}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatTime(record.checkin_time)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatTime(record.checkout_time)}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <StatusBadge status={record.status} />
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{record.hoursWorked} hrs</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatHours(record.working_hours)}
+                        </td>
                       </motion.tr>
                     ))
                   ) : (

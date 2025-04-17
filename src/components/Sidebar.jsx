@@ -89,7 +89,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar, userRole }) => {
                 <div className="w-full text-center flex flex-col">
                     <div className="w-full py-7 px-4">
                         <h2 className="text-[22px] font-montserrat text-textdark font-bold leading-[135%]">
-                            {userRole === "admin" ? "Admin Dashboard" : "Manager Dashboard"}
+                            {userRole === "admin" ? "Admin Dashboard" :userRole === "manager" ? "Manager Dashboard":"User Dashboard"}
                         </h2>
                     </div>
 

@@ -27,7 +27,7 @@ const cardHover = {
   }
 };
 
-const AdminHome = () => {
+const DashbaordHome = () => {
   const [todaysAttendance, setTodaysAttendance] = useState([])
   const [stats, seStats] = useState({
     totalEmployees: 0,
@@ -44,12 +44,42 @@ const AdminHome = () => {
 
   const fetchTodaysAttendance = async () => {
     const response = await getTodaysAttendance();
-    if (response.status && Array.isArray(response.data?.records)) {
-      setTodaysAttendance(response.data.records);
+    if (response.status && Array.isArray(response.data?.attendance)) {
+      const formatted = response.data.attendance.map(item => {
+        const workingHoursFloat = item.working_hours || 0; // in hours
+        const totalSeconds = Math.floor(workingHoursFloat * 3600);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+  
+        const workingHours = `${hours}h ${minutes}m`;
+  
+        return {
+          id: item._id,
+          employeeId: item.employeeId,
+          name: item.employeeName,
+          email: item.email,
+          clockIn: item.checkin_time
+            ? new Date(item.checkin_time).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : null,
+          clockOut: item.checkout_time
+            ? new Date(item.checkout_time).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : null,
+          working_hour: workingHours,
+          working_hour_in_seconds: totalSeconds,
+          status: item.status === 'in' ? 'Clock In' : 'Clock Out',
+        };
+      });
+  
+      setTodaysAttendance(formatted);
     }
   };
-  
-
+   
   useEffect(() => {
     fetchStats();
     fetchTodaysAttendance()
@@ -143,6 +173,7 @@ const AdminHome = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock In</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Clock Out</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Working Hours</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               </motion.tr>
             </thead>
@@ -186,21 +217,21 @@ const AdminHome = () => {
                       </td>
 
                       <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {emp.working_hour}
+                        </div>
+                      </td>
+                      
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <motion.span
                           initial={{ scale: 0.9 }}
                           animate={{ scale: 1 }}
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${emp.status === "On-Time"
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${emp.status === "Clock In"
                             ? 'bg-green-100 text-green-800'
-                            : emp.status === "Late" ?
-                              'bg-yellow-100 text-yellow-800'
-                              : 'bg-red-100 text-red-800'
+                            : 'bg-red-100 text-red-800'
                             }`}
                         >
-                          {emp.status === "On-Time" ?
-                            'On Time'
-                            : emp.status === "Late" ?
-                              'Late'
-                              : 'Absent'}
+                          {emp.status}
                         </motion.span>
                       </td>
                     </motion.tr>
@@ -241,4 +272,4 @@ const AdminHome = () => {
   );
 };
 
-export default AdminHome;
+export default DashbaordHome;

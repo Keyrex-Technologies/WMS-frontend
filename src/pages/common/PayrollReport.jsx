@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { FiSearch, FiClock, FiDollarSign, FiCalendar, FiChevronDown, FiUser } from 'react-icons/fi';
+import { getAllPayrolls } from '../../utils/attendance';
+
+const bubbles = [
+  "bg-blue-100 text-blue-600",
+  "bg-purple-100 text-purple-600",
+  "bg-red-100 text-red-600",
+  "bg-green-100 text-green-600",
+  "bg-yellow-100 text-yellow-600"
+];
 
 const PayrollReport = () => {
   const [records, setRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [currentPage, setCurrentPage] = useState(1);
   const recordsPerPage = 10;
 
-  // Current date helpers
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
   const months = Array.from({ length: 12 }, (_, i) => ({
@@ -16,7 +25,6 @@ const PayrollReport = () => {
     name: new Date(currentYear, i, 1).toLocaleString('default', { month: 'long' })
   }));
 
-  // Format currency
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -25,186 +33,89 @@ const PayrollReport = () => {
     }).format(amount);
   };
 
-  // Calculate hourly rate based on actual working days
-  const calculateHourlyRate = (monthlySalary, workingDays) => {
-    const standardHours = workingDays * 8; // 8 hours per day
-    return monthlySalary / standardHours;
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric'
+    });
   };
 
-  // Calculate daily salary and hours with dynamic rates
-  const calculateDailySalary = (clockIn, clockOut, hourlyRate) => {
-    const [inHour, inMin] = clockIn.split(':').map(Number);
-    const [outHour, outMin] = clockOut.split(':').map(Number);
-    
-    const start = inHour * 60 + inMin;
-    const end = outHour * 60 + outMin;
-    let minutes = end - start;
-    
-    // Deduct lunch break if worked more than 5 hours
-    if (minutes > 300) minutes -= 60;
-    
-    const hours = minutes / 60;
-    const salary = hours * hourlyRate;
-    
-    return { 
-      hours: parseFloat(hours.toFixed(2)),
-      salary: parseFloat(salary.toFixed(2))
-    };
+  const getRandomColor = () => {
+    return bubbles[Math.floor(Math.random() * bubbles.length)];
   };
 
-  // Generate mock data for selected month
-  useEffect(() => {
-    const employees = [
-      {
-        id: 'EMP-001',
-        name: 'John Doe',
-        email: 'john@example.com',
-        monthlySalary: 5000, // $5000 monthly
-        avatarColor: 'bg-blue-100 text-blue-600',
-        position: 'Software Engineer'
-      },
-      {
-        id: 'EMP-002',
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        monthlySalary: 6000, // $6000 monthly
-        avatarColor: 'bg-purple-100 text-purple-600',
-        position: 'Product Manager'
-      },
-      {
-        id: 'EMP-003',
-        name: 'Robert Johnson',
-        email: 'robert@example.com',
-        monthlySalary: 4500, // $4500 monthly
-        avatarColor: 'bg-green-100 text-green-600',
-        position: 'UX Designer'
-      }
-    ];
+  const calculateSummary = (filteredRecords) => {
+    if (filteredRecords.length === 0) {
+      return null;
+    }
 
-    const generateAttendance = () => {
-      const daysInMonth = new Date(currentYear, selectedMonth, 0).getDate();
-      const attendance = [];
-      let workingDaysCount = 0;
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = `${currentYear}-${selectedMonth.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-        const dayOfWeek = new Date(date).getDay();
-        
-        // Skip weekends (0=Sunday, 6=Saturday)
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-          workingDaysCount++;
-          employees.forEach(emp => {
-            // Simulate some variation in working hours
-            let clockIn = '09:00';
-            let clockOut = '17:00';
-            
-            // Randomly adjust times for realism (±30 minutes)
-            if (Math.random() > 0.7) {
-              clockIn = `08:${Math.floor(30 + Math.random() * 30).toString().padStart(2, '0')}`;
-            }
-            if (Math.random() > 0.7) {
-              clockOut = `17:${Math.floor(Math.random() * 30).toString().padStart(2, '0')}`;
-            }
-
-            // Simulate occasional absences (10% chance)
-            const isAbsent = Math.random() > 0.9;
-            
-            attendance.push({
-              empId: emp.id,
-              date,
-              clockIn: isAbsent ? null : clockIn,
-              clockOut: isAbsent ? null : clockOut,
-              status: isAbsent ? 'Absent' : 'Present'
-            });
-          });
-        }
-      }
-
-      return { attendance, workingDaysCount };
+    const summary = {
+      name: filteredRecords[0]?.employeeName || '',
+      position: filteredRecords[0]?.employeePosition || '',
+      presentDays: 0,
+      absentDays: 0,
+      totalSalary: 0,
+      totalHours: 0,
+      avatarColor: getRandomColor()
     };
 
-    const { attendance, workingDaysCount } = generateAttendance();
-    const payrollRecords = attendance.map(record => {
-      const employee = employees.find(e => e.id === record.empId);
-      const hourlyRate = calculateHourlyRate(employee.monthlySalary, workingDaysCount);
-      
-      let hours = 0;
-      let salary = 0;
-      
+    filteredRecords.forEach(record => {
       if (record.status === 'Present') {
-        const result = calculateDailySalary(record.clockIn, record.clockOut, hourlyRate);
-        hours = result.hours;
-        salary = result.salary;
+        summary.presentDays++;
+        summary.totalSalary += record.daily_salary || 0;
+        summary.totalHours += record.working_hours || 0;
+      } else {
+        summary.absentDays++;
       }
-      
-      return {
-        ...record,
-        employeeName: employee.name,
-        employeeId: employee.id,
-        employeeEmail: employee.email,
-        employeePosition: employee.position,
-        avatarColor: employee.avatarColor,
-        hoursWorked: hours,
-        dailySalary: salary,
-        hourlyRate: parseFloat(hourlyRate.toFixed(2)),
-        monthlySalary: employee.monthlySalary
-      };
     });
 
-    setRecords(payrollRecords);
-  }, [selectedMonth, currentYear]);
+    return summary;
+  };
 
-  // Filter records based on search
+  const fetchPayrolls = async (month) => {
+    setLoading(true);
+    try {
+      const response = await getAllPayrolls(month);
+
+      if (response.status) {
+        const recordsWithColor = response.data.attendance?.map(record => ({
+          ...record,
+          avatarColor: getRandomColor()
+        })) || [];
+        setRecords(recordsWithColor);
+      } else {
+        console.error("Failed to fetch payroll data:", response.error);
+        setRecords([]);
+      }
+    } catch (error) {
+      console.error("Error fetching payroll:", error);
+      setRecords([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPayrolls(selectedMonth);
+  }, [selectedMonth]);
+
   const filteredRecords = records.filter(record => {
-    return searchTerm === '' || 
-      record.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    return searchTerm === '' ||
+      record.employeeId.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      record.employeeEmail.toLowerCase().includes(searchTerm.toLowerCase());
+      (record.employeeEmail && record.employeeEmail.toLowerCase().includes(searchTerm.toLowerCase()));
   });
 
-  // Check if we're viewing a single employee
-  const viewingSingleEmployee = () => {
-    if (searchTerm === '') return false;
+  const isSingleEmployeeView = () => {
+    if (searchTerm === '' || filteredRecords.length === 0) return false;
     
-    const employeeIds = new Set();
-    filteredRecords.forEach(record => employeeIds.add(record.employeeId));
-    return employeeIds.size === 1;
+    const firstEmployeeId = filteredRecords[0].employeeId;
+    return filteredRecords.every(record => record.employeeId === firstEmployeeId);
   };
 
-  // Calculate summary statistics for the filtered records
-  const calculateSummary = () => {
-    const employeeData = {};
-    
-    filteredRecords.forEach(record => {
-      if (!employeeData[record.employeeId]) {
-        employeeData[record.employeeId] = {
-          name: record.employeeName,
-          position: record.employeePosition,
-          totalHours: 0,
-          totalSalary: 0,
-          workingDays: 0,
-          absentDays: 0,
-          monthlySalary: record.monthlySalary,
-          avatarColor: record.avatarColor
-        };
-      }
-      
-      if (record.status === 'Present') {
-        employeeData[record.employeeId].totalHours += record.hoursWorked;
-        employeeData[record.employeeId].totalSalary += record.dailySalary;
-        employeeData[record.employeeId].workingDays++;
-      } else {
-        employeeData[record.employeeId].absentDays++;
-      }
-    });
-    
-    return employeeData;
-  };
-
-  const employeeSummaries = calculateSummary();
-  const isSingleEmployeeView = viewingSingleEmployee();
-  const singleEmployeeSummary = isSingleEmployeeView ? 
-    employeeSummaries[Object.keys(employeeSummaries)[0]] : null;
+  const singleEmployeeSummary = isSingleEmployeeView() ? calculateSummary(filteredRecords) : null;
 
   // Pagination
   const indexOfLastRecord = currentPage * recordsPerPage;
@@ -239,7 +150,7 @@ const PayrollReport = () => {
             }}
           />
         </div>
-        
+
         {/* Month Selector */}
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
@@ -266,7 +177,7 @@ const PayrollReport = () => {
       </div>
 
       {/* Employee Summary Card (shown when viewing single employee) */}
-      {isSingleEmployeeView && singleEmployeeSummary && (
+      {singleEmployeeSummary && (
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
             <div className={`flex-shrink-0 h-16 w-16 rounded-full ${singleEmployeeSummary.avatarColor} flex items-center justify-center text-2xl font-medium`}>
@@ -275,14 +186,10 @@ const PayrollReport = () => {
             <div className="flex-1">
               <h2 className="text-xl font-bold text-gray-800">{singleEmployeeSummary.name}</h2>
               <p className="text-gray-600">{singleEmployeeSummary.position}</p>
-              <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="mt-2 grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500">Monthly Salary</p>
-                  <p className="font-semibold">{formatCurrency(singleEmployeeSummary.monthlySalary)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Working Days</p>
-                  <p className="font-semibold">{singleEmployeeSummary.workingDays}</p>
+                  <p className="text-sm text-gray-500">Present Days</p>
+                  <p className="font-semibold">{singleEmployeeSummary.presentDays}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Absent Days</p>
@@ -325,6 +232,7 @@ const PayrollReport = () => {
                 </th>
               </tr>
             </thead>
+
             <tbody className="bg-white divide-y divide-gray-200">
               {currentRecords.length > 0 ? (
                 currentRecords.map((record) => (
@@ -347,29 +255,29 @@ const PayrollReport = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(record.date).toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
+                      {formatDate(record.date)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs rounded-full ${
-                        record.status === 'Present' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
+                        record.status === 'Present'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                        }`}>
                         {record.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {record.status === 'Present' ? (
-                        `${record.hoursWorked.toFixed(2)} hrs`
+                        `${record.working_hours.toFixed(2)} hrs`
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold">
                       {record.status === 'Present' ? (
-                        <span className="text-green-600">{formatCurrency(record.dailySalary)}</span>
+                        <span className="text-green-600">
+                          {formatCurrency(record.daily_salary)}
+                        </span>
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
@@ -379,7 +287,7 @@ const PayrollReport = () => {
               ) : (
                 <tr>
                   <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
-                    {searchTerm ? 'No records found for this employee' : 'Select an employee to view payroll details'}
+                    {loading ? 'Loading...' : searchTerm ? 'No records found for this employee' : 'No records available'}
                   </td>
                 </tr>
               )}
@@ -395,51 +303,19 @@ const PayrollReport = () => {
             Showing {indexOfFirstRecord + 1} to {Math.min(indexOfLastRecord, filteredRecords.length)} of {filteredRecords.length} records
           </div>
           <div className="flex gap-2">
-            <button 
+            <button
               onClick={() => setCurrentPage(p => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
               className="px-4 py-2 border rounded-lg disabled:opacity-50 hover:bg-gray-50"
             >
               Previous
             </button>
-            <button 
+            <button
               onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
               disabled={currentPage === totalPages}
               className="px-4 py-2 border rounded-lg disabled:opacity-50 hover:bg-gray-50"
             >
               Next
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Monthly Summary for Single Employee */}
-      {isSingleEmployeeView && singleEmployeeSummary && (
-        <div className="mt-8 bg-white rounded-xl shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Monthly Payroll Summary</h3>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="border p-4 rounded-lg">
-              <p className="text-sm text-gray-500">Base Salary</p>
-              <p className="text-xl font-semibold">{formatCurrency(singleEmployeeSummary.monthlySalary)}</p>
-            </div>
-            <div className="border p-4 rounded-lg">
-              <p className="text-sm text-gray-500">Days Worked</p>
-              <p className="text-xl font-semibold">{singleEmployeeSummary.workingDays} days</p>
-            </div>
-            <div className="border p-4 rounded-lg">
-              <p className="text-sm text-gray-500">Total Hours</p>
-              <p className="text-xl font-semibold">{singleEmployeeSummary.totalHours.toFixed(2)} hrs</p>
-            </div>
-            <div className="border p-4 rounded-lg bg-blue-50">
-              <p className="text-sm text-blue-600">Total Payable</p>
-              <p className="text-xl font-semibold text-blue-700">
-                {formatCurrency(singleEmployeeSummary.totalSalary)}
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 flex justify-end">
-            <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-              Generate Pay Slip
             </button>
           </div>
         </div>

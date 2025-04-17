@@ -147,7 +147,14 @@ const GPSMap = ({
 
         if (!insideZone && isClockIn) {
           setIsClockIn(false);
-          setClockOutTime(new Date());
+          socket.on("check-out-success", (data) => {
+            const responseData = data.result.data || data.result.attendance;
+            if (responseData.checkout_time) {
+              console.log(responseData.checkout_time)
+              setClockOutTime(new Date(responseData.checkout_time));
+            }
+
+          })
         }
       }
     };

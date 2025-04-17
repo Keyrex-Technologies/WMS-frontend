@@ -1,30 +1,31 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Suspense, lazy } from "react";
-import Login from "./pages/auth/Login";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import VerifyOTP from "./pages/auth/VerifyOTP";
-import ResetPassword from "./pages/auth/ResetPassword";
-import DashbaordLayout from "./layouts/DashboardLayout";
-import AdminHome from "./pages/admin/AdminHome";
-import EmployeeManagement from "./pages/admin/EmployeeManagement";
-import AddEmployee from "./pages/admin/AddEmployee";
-import UpdateEmployee from "./pages/admin/UpdateEmployee";
-import AttendanceManagement from "./pages/common/AttendanceManagement";
-import Settings from "./pages/admin/Settings";
-import PayrollManagement from "./pages/admin/PayrollManagement";
-// import GenerateReport from "./pages/admin/GenerateReport";
-import ManagerHome from "./pages/manager/ManagerHome";
-import PayrollReport from "./pages/common/PayrollReport";
-import Profile from "./pages/manager/Profile";
-import ViewAttendance from "./pages/user/ViewAttendance";
-import UserHome from "./pages/user/UserHome";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { SocketProvider } from "./context/SocketContext";
+// Lazy loaded components
+const Login = lazy(() => import("./pages/auth/Login"));
+const ForgotPassword = lazy(() => import("./pages/auth/ForgotPassword"));
+const VerifyOTP = lazy(() => import("./pages/auth/VerifyOTP"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
+const SignUp = lazy(() => import("./pages/auth/SignUp"));
+
+const AuthLayout = lazy(() => import("./layouts/AuthLayout"));
+const DashbaordLayout = lazy(() => import("./layouts/DashboardLayout"));
+
+const DashbaordHome = lazy(() => import("./pages/common/DashbaordHome"));
+const AttendanceManagement = lazy(() => import("./pages/common/AttendanceManagement"));
+const PayrollReport = lazy(() => import("./pages/common/PayrollReport"));
+const Profile = lazy(() => import("./pages/common/Profile"));
+
+const EmployeeManagement = lazy(() => import("./pages/admin/EmployeeManagement"));
+const AddEmployee = lazy(() => import("./pages/admin/AddEmployee"));
+const UpdateEmployee = lazy(() => import("./pages/admin/UpdateEmployee"));
+
+const ViewAttendance = lazy(() => import("./pages/user/ViewAttendance"));
+const UserHome = lazy(() => import("./pages/user/UserHome"));
 
 const Loader = lazy(() => import("./components/Loader"));
-const AuthLayout = lazy(() => import("./layouts/AuthLayout"));
-const SignUp = lazy(() => import("./pages/auth/SignUp"));
 const Error = lazy(() => import("./components/Error"));
 
 const appRouter = createBrowserRouter([
@@ -45,14 +46,14 @@ const appRouter = createBrowserRouter([
     element: <DashbaordLayout userRole={"admin"} />,
     errorElement: <Error />,
     children: [
-      { path: "", element: <AdminHome /> },
+      { path: "", element: <DashbaordHome /> },
       { path: "employees-management", element: <EmployeeManagement /> },
       { path: "add-employee", element: <AddEmployee /> },
       { path: "update-employee/:id", element: <UpdateEmployee /> },
       { path: "attendance-management", element: <AttendanceManagement /> },
       { path: "payroll-management", element: <PayrollReport /> },
       // { path: "reports", element: <GenerateReport /> },
-      { path: "settings", element: <Settings /> },
+      { path: "settings", element: <Profile /> },
 
     ],
   },
@@ -61,7 +62,7 @@ const appRouter = createBrowserRouter([
     element: <DashbaordLayout userRole={"manager"} />,
     errorElement: <Error />,
     children: [
-      { path: "", element: <ManagerHome /> },
+      { path: "", element: <DashbaordHome /> },
       { path: "attendance-management", element: <AttendanceManagement /> },
       { path: "payroll-reports", element: <PayrollReport /> },
       { path: "settings", element: <Profile /> },

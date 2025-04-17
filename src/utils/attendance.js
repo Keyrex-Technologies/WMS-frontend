@@ -22,7 +22,7 @@ export const getStats = async () => {
 
 export const getTodaysAttendance = async () => {
   try {
-    const response = await axios.get(`${backendUrl}/attendance/today`, {
+    const response = await axios.get(`${backendUrl}/attendance/get-daily-attendance`, {
       cancelToken: source.token,
     });
     return response;
@@ -53,11 +53,11 @@ export const getAllAttendance = async () => {
   }
 };
 
-export const getAllPayrolls = async () => {
+export const getAllPayrolls = async (month) => {
   try {
     // ?month=3
     const response = await axios.get(
-      `${backendUrl}/attendance/get-all-payrolls`,
+      `${backendUrl}/attendance/get-all-payrolls?month=${month}`,
       {
         cancelToken: source.token,
       }
@@ -72,10 +72,10 @@ export const getAllPayrolls = async () => {
   }
 };
 
-export const getPayroll = async () => {
+export const getPayroll = async (user_id, month) => {
   try {
     const response = await axios.get(
-      `${backendUrl}/attendance/get-payroll?employeeId=67ffa738bcdea395296a60aa&month=4`,
+      `${backendUrl}/attendance/get-payroll?employeeId=${user_id}&month=${month}`,
       {
         cancelToken: source.token,
       }

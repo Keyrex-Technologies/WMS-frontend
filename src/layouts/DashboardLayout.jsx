@@ -4,6 +4,7 @@ import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import Loader from "../components/Loader";
 import Cookies from "js-cookie";
+import { useSocket } from "../context/SocketContext";
 
 const DashboardLayout = ({ userRole }) => {
     const navigate = useNavigate();
@@ -13,10 +14,24 @@ const DashboardLayout = ({ userRole }) => {
     const restrictedPaths = ["admin", "manager", "user"];
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [loading, setLoading] = useState(true);
+    const { socket, isConnected } = useSocket();
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen);
     };
+
+    useEffect(() => {
+        return () => {
+          if (socket?.emit && user?._id) {
+            socket.emit('check-out', {
+              userId: user._id,
+              date: new Date(),
+            });
+          } else {
+            console.warn("Socket or user is not available on unmount");
+          }
+        };
+      }, [socket, user]);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -26,7 +41,7 @@ const DashboardLayout = ({ userRole }) => {
         const checkAuthStatus = () => {
             const currentPath = location.pathname.split("/")[1];
             const isRestricted = restrictedPaths.includes(currentPath);
-    
+
             if (!token && isRestricted) {
                 navigate('/')
             } else if (user?.role === "admin" && currentPath !== "admin") {
@@ -39,7 +54,7 @@ const DashboardLayout = ({ userRole }) => {
                 setLoading(false);
             }
         };
-    
+
         setLoading(true);
         checkAuthStatus();
     }, [token, location.pathname]);

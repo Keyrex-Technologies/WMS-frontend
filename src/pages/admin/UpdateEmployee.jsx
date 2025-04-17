@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MdArrowBack } from 'react-icons/md';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getEmployeeRecord, removeEmployee, updateEmployeeRecord } from '../../utils/employees';
+import { getEmployeeRecord , updateEmployeeRecord } from '../../utils/employees';
 import { toast } from 'react-toastify';
 
 const UpdateEmployee = () => {

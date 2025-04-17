@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   FiEdit,
@@ -8,21 +8,26 @@ import {
   FiMapPin,
   FiLock
 } from 'react-icons/fi';
+import Cookies from 'js-cookie';
+import { getProfile, updateProfile } from '../../utils/profile';
+import { MdPermIdentity } from 'react-icons/md';
+import { toast } from 'react-toastify';
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
+  const user = Cookies.get("user") ? JSON.parse(Cookies.get("user")) : null;
+
   const [profile, setProfile] = useState({
-    name: 'Sarah Johnson',
-    position: 'Operations Manager',
-    department: 'Human Resources',
-    email: 's.johnson@company.com',
-    phone: '+92 300 1234567',
-    address: '123 Business Ave, Islamabad, Pakistan',
-    hireDate: '2020-05-15',
-    bio: 'Experienced HR professional with 8+ years in talent management and employee relations.'
+    name: '',
+    position: '',
+    email: '',
+    phone: '',
+    address: '',
+    hireDate: '',
+    cnic: '',
   });
 
-  const nonEditableFields = ['position', 'department', 'hireDate'];
+  const nonEditableFields = ['position', 'hireDate'];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -31,31 +36,77 @@ const Profile = () => {
     }
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
-    // Save to backend here
+  const handleSave = async () => {
+    try {
+      const updatedData = {
+        name: profile.name,
+        phoneNumber: profile.phone,
+        address: profile.address,
+        cnic: profile.cnic,
+      };
+
+      const response = await updateProfile(user._id, updatedData);
+      if (response.status) {
+        toast.success(response.data.message);
+        fetchProfile();
+        setIsEditing(false);
+      }
+    } catch (e) {
+      toast.error(e?.response?.data?.message || "Something went wrong!");
+    }
   };
 
   const renderField = (name, value) => {
     const isLocked = nonEditableFields.includes(name);
+    const isEmail = name === 'email';
 
-    return isLocked ? (
-      <div className="flex items-center gap-2">
-        <p className="font-medium">{value}</p>
-        <FiLock className="text-gray-400" size={14} />
-      </div>
-    ) : isEditing ? (
+    if (isLocked) {
+      return (
+        <div className="flex items-center gap-2">
+          <p className="font-medium">{value}</p>
+          <FiLock className="text-gray-400" size={14} />
+        </div>
+      );
+    }
+
+    return isEditing ? (
       <input
-        type={name === 'email' ? 'email' : 'text'}
+        type={isEmail ? 'email' : 'text'}
         name={name}
         value={value}
+        disabled={isEmail}
         onChange={handleInputChange}
-        className="w-full p-2 border border-gray-300 rounded-md"
+        className={`w-full p-2 border border-gray-300 rounded-md ${isEmail ? 'opacity-50' : ''}`}
       />
     ) : (
       <p className="font-medium">{value}</p>
     );
   };
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    try {
+      const response = await getProfile(user._id);
+      if (response.status) {
+        const data = response.data;
+        setProfile({
+          name: data.name || '',
+          position: data.role || '',
+          email: data.email || '',
+          phone: data.phoneNumber || '',
+          address: data.address || '',
+          hireDate: data.joiningDate || '',
+          cnic: data.cnic || '',
+        });
+      }
+    } catch (error) {
+      toast.error("Failed to load profile.");
+    }
+  };
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
 
   return (
     <motion.div
@@ -64,11 +115,8 @@ const Profile = () => {
       transition={{ duration: 0.5 }}
       className="max-w-4xl sm:px-6"
     >
-      {/* Header */}
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-          My Profile
-        </h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Profile</h1>
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -80,7 +128,6 @@ const Profile = () => {
         </motion.button>
       </div>
 
-      {/* Admin Notice */}
       {isEditing && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -96,19 +143,16 @@ const Profile = () => {
         </motion.div>
       )}
 
-      {/* Profile Card */}
       <motion.div
         initial={{ y: 20 }}
         animate={{ y: 0 }}
         className="bg-white rounded-xl shadow-md overflow-hidden"
       >
         <div className="md:flex">
-          {/* Profile Picture */}
           <div className="bg-blue-50 p-6 md:p-8 flex flex-col items-center justify-center md:w-1/3">
             <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-5xl font-bold mb-4">
               {profile.name.charAt(0)}
             </div>
-
             {isEditing ? (
               <input
                 type="text"
@@ -123,40 +167,38 @@ const Profile = () => {
               </h2>
             )}
             <div className="flex items-center gap-1">
-              <p className="text-blue-600 font-medium text-center">{profile.position}</p>
+              <p className="text-blue-600 font-medium text-center capitalize">{profile.position}</p>
               {isEditing && <FiLock className="text-gray-400" size={14} />}
             </div>
           </div>
 
-          {/* Profile Details */}
           <div className="p-6 md:p-8 md:w-2/3 space-y-4">
-            {/* Email */}
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                <FiMail />
-              </div>
+              <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><FiMail /></div>
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Email</p>
                 {renderField('email', profile.email)}
               </div>
             </div>
 
-            {/* Phone */}
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                <FiPhone />
-              </div>
+              <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><FiPhone /></div>
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Phone</p>
                 {renderField('phone', profile.phone)}
               </div>
             </div>
 
-            {/* Address */}
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-                <FiMapPin />
+              <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><MdPermIdentity /></div>
+              <div className="flex-1">
+                <p className="text-sm text-gray-500">CNIC</p>
+                {renderField('cnic', profile.cnic)}
               </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-blue-50 rounded-lg text-blue-600"><FiMapPin /></div>
               <div className="flex-1">
                 <p className="text-sm text-gray-500">Address</p>
                 {renderField('address', profile.address)}
